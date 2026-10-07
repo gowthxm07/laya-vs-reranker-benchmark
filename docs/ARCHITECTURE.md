@@ -98,8 +98,8 @@ To establish scientific validity, PatternRAG Lab isolates **only** the post-retr
 
 ### 3.5 Relevance Evaluator Strategy (`RelevanceEvaluator`)
 The primary polymorphic boundary (Strategy pattern):
-- **Path A**: `CrossEncoderEvaluator` calculates joint cross-attention scores and retains Top-K chunks (Phase 3).
-- **Path B**: `LayaEvaluator` communicates via `LayaAdapter` to classify passages as relevant or irrelevant (Phase 4).
+- **Path A (Completed in Phase 3)**: `CrossEncoderEvaluator` calculates joint cross-attention scores via `cross-encoder/ms-marco-MiniLM-L-6-v2`. Managed by `CrossEncoderRerankingService` and `PythonCrossEncoderProvider` over a persistent Python worker IPC channel, sorting candidates and retaining Top-N chunks.
+- **Path B (Reserved for Phase 4)**: `LayaEvaluator` communicates via `LayaAdapter` to classify passages as relevant or irrelevant.
 
 ### 3.6 Context & Prompt Builders (`IContextBuilder`, `IPromptBuilder`)
 Encapsulates token budget limits, header labeling, and system prompt constraints. Ensures prompts are synthesized identically across both pipelines without leaking implementation specifics.
@@ -112,4 +112,10 @@ Interchangeable generation layer:
 ### 3.8 Telemetry & Trace Observer (`IPipelineObserver`)
 Listens to pipeline lifecycle events without polluting core evaluation routines. Captures phase durations (`TraceEvent`), chunk decision audits, and token counters.
 
-For full retrieval specifications, see [`docs/RETRIEVAL.md`](RETRIEVAL.md).
+---
+
+## 4. Documentation References
+- Retrieval Architecture: [`docs/RETRIEVAL.md`](RETRIEVAL.md)
+- Cross-Encoder Reranking: [`docs/RERANKING.md`](RERANKING.md)
+- Design Patterns: [`docs/DESIGN_PATTERNS.md`](DESIGN_PATTERNS.md)
+- Implementation Roadmap: [`docs/PHASES.md`](PHASES.md)

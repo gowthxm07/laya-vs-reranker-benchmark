@@ -5,3 +5,4 @@ export * from "./dataset";
 export * from "./experiment";
 export * from "./document";
 export * from "./candidate-pool";
+export * from "./reranker";

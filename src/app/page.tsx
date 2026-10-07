@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/footer";
 import { DocumentIngestionCard } from "@/components/documents/document-ingestion-card";
 import { BenchmarkControlBar } from "@/components/query/benchmark-control-bar";
 import { CandidatePoolInspector } from "@/components/retrieval/candidate-pool-inspector";
+import { RerankedPoolInspector } from "@/components/reranking/reranked-pool-inspector";
 import { ComparisonWorkspace } from "@/components/comparison/comparison-workspace";
 import { MetricsDashboard } from "@/components/metrics/metrics-dashboard";
 import { DesignPatternInspector } from "@/components/patterns/design-pattern-inspector";
@@ -13,6 +14,7 @@ import { SAMPLE_DATASETS } from "@/lib/config/datasets";
 import { DocumentDataset } from "@/lib/types/dataset";
 import { Document } from "@/lib/types/document";
 import { CandidateChunkPool } from "@/lib/types/candidate-pool";
+import { RerankedCandidatePool } from "@/lib/types/reranker";
 import { Experiment } from "@/lib/types/experiment";
 import { Terminal, Cpu, AlertCircle } from "lucide-react";
 
@@ -36,6 +38,12 @@ export default function HomePage() {
   const [candidatePool, setCandidatePool] =
     React.useState<CandidateChunkPool | null>(null);
   const [isRetrieving, setIsRetrieving] = React.useState<boolean>(false);
+
+  // Phase 3 Reranking state: real RerankedCandidatePool from Cross-Encoder
+  const [rerankedPool, setRerankedPool] =
+    React.useState<RerankedCandidatePool | null>(null);
+  const [isReranking, setIsReranking] = React.useState<boolean>(false);
+  const [rerankTopN, setRerankTopN] = React.useState<number>(5);
 
   // Initial experiment model
   const [currentExperiment, setCurrentExperiment] = React.useState<Experiment>({
@@ -80,6 +88,7 @@ export default function HomePage() {
     setIndexedDoc(null);
     setTotalIndexedChunks(0);
     setCandidatePool(null);
+    setRerankedPool(null);
     setRunNotice("Vector store cleared.");
   };
 
@@ -88,6 +97,7 @@ export default function HomePage() {
 
     setIsRetrieving(true);
     setErrorMessage(null);
+    setRerankedPool(null);
 
     try {
       const res = await fetch("/api/retrieve", {
@@ -130,13 +140,154 @@ export default function HomePage() {
       }));
 
       setRunNotice(
-        `Retrieved ${pool.candidateChunks.length} candidate passages in ${pool.retrievalLatencyMs}ms using nomic-embed-text. Candidate pool prepared for future Cross-Encoder and Laya evaluation.`
+        `Retrieved ${pool.candidateChunks.length} candidate passages in ${pool.retrievalLatencyMs}ms using nomic-embed-text. Candidate pool prepared for Cross-Encoder and Laya evaluation.`
       );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to retrieve candidate chunks.";
       setErrorMessage(message);
     } finally {
       setIsRetrieving(false);
+    }
+  };
+
+  const handleRunRerank = async (selectedTopN: number) => {
+    if (!candidatePool || candidatePool.candidateChunks.length === 0) return;
+
+    setIsReranking(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch("/api/rerank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidatePool,
+          topN: selectedTopN,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Cross-Encoder reranking failed.");
+      }
+
+      const pool: RerankedCandidatePool = data.rerankedPool;
+      setRerankedPool(pool);
+
+      // Update Path A in current experiment
+      setCurrentExperiment((prev) => ({
+        ...prev,
+        advancedRagResult: {
+          pipelineId: "advanced-rag",
+          strategyName: "Cross-Encoder Reranker",
+          status: "completed",
+          candidateChunkCount: pool.topKRetrieved,
+          retainedChunkCount: pool.topNSelected,
+          discardedChunkCount: pool.topKRetrieved - pool.topNSelected,
+          retrievalLatencyMs: candidatePool.retrievalLatencyMs,
+          relevanceEvaluationLatencyMs: pool.metrics.evaluationLatencyMs,
+          totalLatencyMs:
+            candidatePool.retrievalLatencyMs + pool.metrics.evaluationLatencyMs,
+          retainedChunks: pool.selectedCandidates.map((c) => ({
+            id: c.id,
+            documentId: c.documentId,
+            text: c.text,
+            source: c.source,
+            pageNumber: c.pageNumber,
+            section: c.section,
+            metadata: c.metadata,
+            retrievalScore: c.originalRetrievalScore,
+            relevanceScore: c.crossEncoderScore,
+            decision: "retained",
+            rank: c.rerankedRank,
+            relevanceRationale: `Cross-encoder logit: ${
+              c.crossEncoderScore > 0
+                ? `+${c.crossEncoderScore.toFixed(3)}`
+                : c.crossEncoderScore.toFixed(3)
+            } (rank #${c.rerankedRank}, moved ${
+              c.rankDelta >= 0 ? `+${c.rankDelta}` : c.rankDelta
+            } pos)`,
+          })),
+          discardedChunks: pool.candidates
+            .filter((c) => !c.isSelected)
+            .map((c) => ({
+              id: c.id,
+              documentId: c.documentId,
+              text: c.text,
+              source: c.source,
+              pageNumber: c.pageNumber,
+              section: c.section,
+              metadata: c.metadata,
+              retrievalScore: c.originalRetrievalScore,
+              relevanceScore: c.crossEncoderScore,
+              decision: "discarded",
+              rank: c.rerankedRank,
+              relevanceRationale: `Cross-encoder logit: ${
+                c.crossEncoderScore > 0
+                  ? `+${c.crossEncoderScore.toFixed(3)}`
+                  : c.crossEncoderScore.toFixed(3)
+              } (rank #${c.rerankedRank}, filtered outside Top-${
+                pool.topNSelected
+              })`,
+            })),
+          trace: [
+            {
+              id: `trace_ret_${Date.now()}`,
+              timestamp: pool.retrievedAt,
+              pipelineId: "advanced-rag",
+              phase: "chunks_retrieved",
+              label: `Retrieved ${pool.topKRetrieved} candidate passages via nomic-embed-text`,
+              status: "success",
+              durationMs: candidatePool.retrievalLatencyMs,
+              details: {
+                topK: pool.topKRetrieved,
+                embeddingModel: candidatePool.embeddingModel,
+              },
+            },
+            {
+              id: `trace_eval_${Date.now()}`,
+              timestamp: pool.rerankedAt,
+              pipelineId: "advanced-rag",
+              phase: "relevance_evaluation_completed",
+              label: `Cross-encoder scored ${pool.topKRetrieved} candidates in ${pool.metrics.evaluationLatencyMs}ms`,
+              status: "success",
+              durationMs: pool.metrics.evaluationLatencyMs,
+              details: {
+                model: pool.crossEncoderModel,
+                isColdStart: pool.metrics.isColdStart,
+                averagePerCandidateMs: pool.metrics.averageCandidateLatencyMs,
+              },
+            },
+            {
+              id: `trace_filter_${Date.now()}`,
+              timestamp: pool.rerankedAt + 1,
+              pipelineId: "advanced-rag",
+              phase: "chunks_filtered",
+              label: `Top-${pool.topNSelected} chunks selected for context (${
+                pool.topKRetrieved - pool.topNSelected
+              } filtered)`,
+              status: "success",
+              details: {
+                topN: pool.topNSelected,
+                retainedCount: pool.topNSelected,
+                discardedCount: pool.topKRetrieved - pool.topNSelected,
+              },
+            },
+          ],
+        },
+      }));
+
+      setRunNotice(
+        `Path A Cross-Encoder reranking complete! Scored ${pool.topKRetrieved} candidates in ${pool.metrics.evaluationLatencyMs}ms. Selected Top-${pool.topNSelected} chunks for generation context.`
+      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to rerank candidate pool.";
+      setErrorMessage(message);
+    } finally {
+      setIsReranking(false);
     }
   };
 
@@ -201,13 +352,26 @@ export default function HomePage() {
           isRunning={isRetrieving}
         />
 
-        {/* 3. Shared Candidate Chunk Pool Inspector (Phase 2 Foundation) */}
+        {/* 3a. Shared Candidate Chunk Pool Inspector (Phase 2 Foundation) */}
         <CandidatePoolInspector
           pool={candidatePool}
           isLoading={isRetrieving}
+          onRunRerank={handleRunRerank}
+          isReranking={isReranking}
+          topN={rerankTopN}
+          onTopNChange={setRerankTopN}
+          hasReranked={!!rerankedPool}
         />
 
-        {/* 4. Side-by-Side Comparison Workspace (Phase 3/4 Boundary) */}
+        {/* 3b. Cross-Encoder Reranked Pool Inspector (Phase 3 Baseline) */}
+        {rerankedPool && (
+          <RerankedPoolInspector
+            rerankedPool={rerankedPool}
+            isLoading={isReranking}
+          />
+        )}
+
+        {/* 4. Side-by-Side Comparison Workspace (Phase 3 Path A Active, Phase 4 Path B Next) */}
         <ComparisonWorkspace experiment={currentExperiment} />
 
         {/* 5. Differential Metrics Dashboard */}
@@ -218,27 +382,33 @@ export default function HomePage() {
           <div className="flex items-center gap-2 text-text-secondary font-medium mb-2">
             <Cpu className="h-4 w-4 text-accent" />
             <h3 className="text-text-primary font-semibold">
-              Phase 2 Shared Retrieval Architecture
+              Experimental RAG Architecture (Phase 2 Retrieval + Phase 3 Cross-Encoder)
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-text-muted leading-relaxed">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-text-muted leading-relaxed">
             <div>
               <strong className="text-text-secondary block mb-0.5">
-                1. Single Source of Truth Candidate Pool
+                1. Single Source of Truth Pool
               </strong>
-              Vector retrieval produces a unified `CandidateChunkPool`. Both future pipelines (Path A Cross-Encoder and Path B Laya) receive this exact pool with identical initial ranks and scores.
+              Vector retrieval produces a unified `CandidateChunkPool`. Both Path A (Cross-Encoder) and Path B (Laya) receive this exact pool with identical initial ranks and scores.
             </div>
             <div>
               <strong className="text-text-secondary block mb-0.5">
                 2. Real Local Embeddings (Ollama)
               </strong>
-              Chunks and queries are embedded locally using `nomic-embed-text` (768 dimensions), avoiding cloud API fees and ensuring 100% reproducible local execution.
+              Passages and queries are embedded locally using `nomic-embed-text` (768 dimensions), avoiding cloud API fees and ensuring 100% reproducible local execution.
             </div>
             <div>
               <strong className="text-text-secondary block mb-0.5">
-                3. Zero Premature Filtering
+                3. Joint Cross-Attention Reranking
               </strong>
-              The retriever assigns `decision: &quot;pending&quot;` to all candidates. It does NOT decide final relevance, preserving the post-retrieval boundary for the Strategy pattern.
+              Path A scores `(query, chunk)` pairs jointly with `cross-encoder/ms-marco-MiniLM-L-6-v2`, capturing complex token-level interactions that bi-encoders miss.
+            </div>
+            <div>
+              <strong className="text-text-secondary block mb-0.5">
+                4. Strict Post-Retrieval Boundary
+              </strong>
+              The reranker evaluates candidates without re-retrieving. Top-N chunks are selected for downstream context, preserving fair benchmark controls for Phase 4 (Laya).
             </div>
           </div>
         </section>

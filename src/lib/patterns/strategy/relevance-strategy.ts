@@ -3,76 +3,123 @@ import {
   RelevanceEvaluationRequest,
   RelevanceEvaluationResult,
 } from "../../interfaces/relevance-evaluator";
+import { CrossEncoderProvider } from "../../interfaces/cross-encoder-provider";
+import { CrossEncoderProviderFactory } from "../../providers/cross-encoder-provider-factory";
+import { Chunk } from "../../types/chunk";
 
-export type EvaluatorStrategyType =
-  | "cross-encoder"
-  | "laya"
-  | "similarity-threshold";
-
-export interface EvaluatorStrategyDescriptor {
-  type: EvaluatorStrategyType;
-  name: string;
-  tagline: string;
-  description: string;
-  pipelineRole: "Path A (Advanced RAG)" | "Path B (Laya RAG)" | "Baseline";
-  isAvailableInPhase1: boolean;
-}
-
-export const EVALUATOR_STRATEGIES: Record<
-  EvaluatorStrategyType,
-  EvaluatorStrategyDescriptor
-> = {
-  "cross-encoder": {
-    type: "cross-encoder",
-    name: "Cross-Encoder Reranker",
-    tagline: "Joint query-chunk transformer attention scoring",
-    description:
-      "Passes (query, chunk) pairs simultaneously through a cross-encoder model (e.g. ms-marco-MiniLM-L-6-v2) to capture deep cross-attention semantics for top-K re-ranking.",
-    pipelineRole: "Path A (Advanced RAG)",
-    isAvailableInPhase1: false,
-  },
-  laya: {
-    type: "laya",
-    name: "Laya Relevance Filter",
-    tagline: "Specialized post-retrieval relevance and semantic pruning",
-    description:
-      "Evaluates retrieved candidate passages via Laya's relevance engine to filter out tangential, noisy, or unhelpful chunks before prompt synthesis.",
-    pipelineRole: "Path B (Laya RAG)",
-    isAvailableInPhase1: false,
-  },
-  "similarity-threshold": {
-    type: "similarity-threshold",
-    name: "Similarity Threshold Filter",
-    tagline: "Standard vector distance cut-off baseline",
-    description:
-      "Filters candidate chunks strictly by initial embedding cosine similarity / bi-encoder score without secondary re-ranking.",
-    pipelineRole: "Baseline",
-    isAvailableInPhase1: false,
-  },
-};
+export {
+  type EvaluatorStrategyType,
+  type EvaluatorStrategyDescriptor,
+  EVALUATOR_STRATEGIES,
+} from "../../config/evaluator-strategies";
 
 /**
- * [STRATEGY IMPLEMENTATION STUB: CrossEncoderEvaluator]
- * Will be populated in Phase 2 with actual cross-encoder re-ranking execution.
+ * [STRATEGY IMPLEMENTATION: CrossEncoderEvaluator]
+ * Real Advanced RAG Cross-Encoder post-retrieval relevance evaluator strategy.
+ * Uses CrossEncoderProvider to compute joint attention scores and re-ranks candidate pool.
  */
 export class CrossEncoderEvaluator implements RelevanceEvaluator {
   readonly id = "cross-encoder";
   readonly name = "Cross-Encoder Reranker";
   readonly description =
     "Joint transformer cross-attention reranking for candidate passages.";
+  private provider: CrossEncoderProvider;
+
+  constructor(provider?: CrossEncoderProvider) {
+    this.provider = provider || CrossEncoderProviderFactory.getProvider();
+  }
+
+  async evaluate(
+    query: string,
+    candidateChunks: Chunk[],
+    options?: Record<string, unknown>
+  ): Promise<RelevanceEvaluationResult> {
+    return this.evaluateRelevance({ query, candidateChunks, options });
+  }
 
   async evaluateRelevance(
     request: RelevanceEvaluationRequest
   ): Promise<RelevanceEvaluationResult> {
-    throw new Error(
-      `CrossEncoderEvaluator execution is planned for Phase 2. Evaluator strategy interface is active. (Query: "${request.query}")`
+    const { query, candidateChunks, options } = request;
+
+    if (!candidateChunks || candidateChunks.length === 0) {
+      return {
+        evaluatorId: this.id,
+        retainedChunks: [],
+        discardedChunks: [],
+        latencyMs: 0,
+        metadata: { candidateCount: 0, topN: options?.topK ?? 5 },
+      };
+    }
+
+    const candidateTexts = candidateChunks.map((c) => c.text);
+    const predictionResult = await this.provider.predictScores(
+      query,
+      candidateTexts
     );
+
+    // Pair each chunk with its score and assign reranked position
+    const scoredChunks: Array<{ chunk: Chunk; score: number }> = candidateChunks.map(
+      (chunk, index) => ({
+        chunk: {
+          ...chunk,
+          relevanceScore: predictionResult.scores[index] ?? 0,
+        },
+        score: predictionResult.scores[index] ?? 0,
+      })
+    );
+
+    // Sort descending by cross-encoder score
+    scoredChunks.sort((a, b) => b.score - a.score);
+
+    const topN =
+      (options?.topK as number) ??
+      ((options as Record<string, unknown>)?.topN as number) ??
+      5;
+    const retainedChunks: Chunk[] = [];
+    const discardedChunks: Chunk[] = [];
+
+    scoredChunks.forEach((item, index) => {
+      const newRank = index + 1;
+      const isRetained = newRank <= topN;
+
+      const updatedChunk: Chunk = {
+        ...item.chunk,
+        rank: newRank,
+        decision: isRetained ? "retained" : "discarded",
+        metadata: {
+          ...item.chunk.metadata,
+          originalRank: item.chunk.rank,
+          crossEncoderScore: item.score,
+        },
+      };
+
+      if (isRetained) {
+        retainedChunks.push(updatedChunk);
+      } else {
+        discardedChunks.push(updatedChunk);
+      }
+    });
+
+    return {
+      evaluatorId: this.id,
+      retainedChunks,
+      discardedChunks,
+      latencyMs: predictionResult.evaluationLatencyMs,
+      metadata: {
+        model: this.provider.model,
+        candidateCount: candidateChunks.length,
+        topN,
+        isColdStart: predictionResult.isColdStart,
+        modelLoadLatencyMs: predictionResult.modelLoadLatencyMs,
+      },
+    };
   }
 }
 
 /**
  * [STRATEGY IMPLEMENTATION STUB: LayaEvaluator]
- * Will be populated in Phase 3 using the LayaAdapter.
+ * Will be populated in Phase 4 using the LayaAdapter.
  */
 export class LayaEvaluator implements RelevanceEvaluator {
   readonly id = "laya";
@@ -84,7 +131,7 @@ export class LayaEvaluator implements RelevanceEvaluator {
     request: RelevanceEvaluationRequest
   ): Promise<RelevanceEvaluationResult> {
     throw new Error(
-      `LayaEvaluator execution is planned for Phase 3. Evaluator strategy interface is active. (Query: "${request.query}")`
+      `LayaEvaluator execution is planned for Phase 4. Evaluator strategy interface is active. (Query: "${request.query}")`
     );
   }
 }
@@ -101,7 +148,7 @@ export class SimilarityThresholdEvaluator implements RelevanceEvaluator {
     request: RelevanceEvaluationRequest
   ): Promise<RelevanceEvaluationResult> {
     throw new Error(
-      `SimilarityThresholdEvaluator execution is planned for Phase 2. Evaluator strategy interface is active. (Query: "${request.query}")`
+      `SimilarityThresholdEvaluator execution is planned for Phase 4 baseline. Evaluator strategy interface is active. (Query: "${request.query}")`
     );
   }
 }

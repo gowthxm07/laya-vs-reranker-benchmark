@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Experiment } from "@/lib/types/experiment";
 import { PipelinePanel } from "./pipeline-panel";
-import { EVALUATOR_STRATEGIES } from "@/lib/patterns/strategy/relevance-strategy";
+import { EVALUATOR_STRATEGIES } from "@/lib/config/evaluator-strategies";
 import { GitCompare, Scale } from "lucide-react";
 
 interface ComparisonWorkspaceProps {

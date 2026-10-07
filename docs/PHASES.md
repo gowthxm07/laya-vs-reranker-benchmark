@@ -10,7 +10,7 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 | :---: | :--- | :--- | :---: |
 | **Phase 1** | **Project Foundation & Architecture** | Project setup, design system, core domain models, design pattern contracts, initial UI shell, documentation | **Completed** |
 | **Phase 2** | **Common Document Retrieval Foundation** | PDF/TXT/MD ingestion, page preservation, deterministic chunking, Ollama embeddings, local vector index, shared `CandidateChunkPool` | **Completed** |
-| **Phase 3** | **Advanced RAG / Cross-Encoder Relevance Evaluation** | Cross-Encoder model loading (e.g. `cross-encoder/ms-marco-MiniLM-L-6-v2`), candidate re-scoring, Top-K selection | Planned |
+| **Phase 3** | **Advanced RAG / Cross-Encoder Relevance Evaluation** | Cross-Encoder model loading (`cross-encoder/ms-marco-MiniLM-L-6-v2`), persistent Python worker IPC, candidate re-scoring, Top-N selection, rank shift tracking | **Completed** |
 | **Phase 4** | **Laya Relevance Evaluation** | Laya adapter integration, semantic relevance filtering strategy, candidate pruning | Planned |
 | **Phase 5** | **Shared Execution + Comparison Engine** | Downstream generation (Ollama `llama3.2:3b`), dual-pipeline orchestrator facade, side-by-side execution | Planned |
 | **Phase 6** | **Evaluation Metrics & Benchmark Suite** | Faithfulness scoring, context reduction rates, differential latency/token analysis, batch query suite | Planned |
@@ -56,11 +56,19 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 
 ---
 
-### Phase 3 — Advanced RAG / Cross-Encoder Relevance Evaluation (Planned)
-- Implement `CrossEncoderEvaluator` strategy.
-- Load joint cross-attention scoring model (e.g. `cross-encoder/ms-marco-MiniLM-L-6-v2`).
-- Score and re-rank candidate chunks from the shared pool.
-- Assign relevance scores and retain Top-K chunks.
+### Phase 3 — Advanced RAG / Cross-Encoder Relevance Evaluation (Completed)
+- [x] Implemented persistent Python Cross-Encoder worker (`scripts/cross_encoder_worker.py`) using `sentence-transformers` and `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+- [x] Implemented `PythonCrossEncoderProvider` communicating via line-delimited JSON IPC over stdin/stdout, eliminating per-query model reload overhead (warm batch scoring in ~70–150ms).
+- [x] Implemented `MockCrossEncoderProvider` for deterministic, zero-dependency offline testing.
+- [x] Built `CrossEncoderProviderFactory` enabling runtime provider resolution and mock injection.
+- [x] Implemented `CrossEncoderRerankingService` and `CrossEncoderEvaluator` Strategy, preserving the shared `CandidateChunkPool` without secondary retrieval.
+- [x] Engineered Top-N selection logic, assigning `retained` status to the top $N$ candidates and `discarded` to remainder.
+- [x] Computed rank shifts (`rankDelta = originalRank - rerankedRank`) to track movements between bi-encoder and cross-encoder stages.
+- [x] Created `POST /api/rerank` endpoint accepting `{ candidatePool, topN }`.
+- [x] Created `RerankedPoolInspector` UI component with rank delta badges, score transitions, and full passage inspection.
+- [x] Updated `CandidatePoolInspector` with Top-N selector and "Run Cross-Encoder Rerank (Path A)" trigger.
+- [x] Added 12 comprehensive unit tests in `src/__tests__/reranking.test.ts` (total 35 tests passing across all test suites).
+- [x] Added detailed architectural guide in `docs/RERANKING.md`.
 
 ---
 

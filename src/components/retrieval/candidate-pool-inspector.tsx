@@ -12,16 +12,29 @@ import {
   FileCode,
   Clock,
   Scale,
+  ArrowUpDown,
+  CheckCircle2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CandidatePoolInspectorProps {
   pool?: CandidateChunkPool | null;
   isLoading?: boolean;
+  onRunRerank?: (topN: number) => void;
+  isReranking?: boolean;
+  topN?: number;
+  onTopNChange?: (topN: number) => void;
+  hasReranked?: boolean;
 }
 
 export function CandidatePoolInspector({
   pool,
   isLoading: _isLoading = false,
+  onRunRerank,
+  isReranking = false,
+  topN = 5,
+  onTopNChange,
+  hasReranked = false,
 }: CandidatePoolInspectorProps) {
   const [expandedChunkIds, setExpandedChunkIds] = React.useState<Set<string>>(
     new Set()
@@ -109,11 +122,72 @@ export function CandidatePoolInspector({
           <Scale className="h-3.5 w-3.5 text-accent shrink-0 mt-0.5" />
           <span>
             <strong className="text-text-primary">Experimental Control Notice:</strong>{" "}
-            This exact candidate chunk pool is shared across both future pipelines. In Phase 3,{" "}
-            <strong className="text-text-primary">Cross-Encoder</strong> will re-score these candidates. In Phase 4,{" "}
+            This exact candidate chunk pool is shared across both pipelines. In Phase 3,{" "}
+            <strong className="text-text-primary">Cross-Encoder</strong> re-scores these candidates. In Phase 4,{" "}
             <strong className="text-text-primary">Laya</strong> will prune them. Initial ranks and retrieval scores reflect raw bi-encoder cosine similarity.
           </span>
         </div>
+
+        {/* Phase 3 Action Bar: Cross-Encoder Rerank Trigger */}
+        {onRunRerank && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-surface-elevated/70 rounded-md border border-accent/30 text-xs">
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="h-4 w-4 text-accent shrink-0" />
+              <div>
+                <span className="font-semibold text-text-primary">
+                  Path A Evaluation: Cross-Encoder Reranking
+                </span>
+                <span className="text-text-muted ml-1.5 hidden sm:inline">
+                  (cross-encoder/ms-marco-MiniLM-L-6-v2)
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-secondary">
+                <label htmlFor="topN-select" className="text-text-muted">
+                  Top-N:
+                </label>
+                <select
+                  id="topN-select"
+                  value={topN}
+                  onChange={(e) => onTopNChange?.(Number(e.target.value))}
+                  disabled={isReranking}
+                  className="bg-canvas-subtle border border-border px-2 py-1 rounded text-text-primary font-mono text-xs focus:outline-none focus:border-accent"
+                >
+                  {[1, 3, 5, 7, 10]
+                    .filter((n) => n <= Math.max(pool.candidateChunks.length, 1))
+                    .map((n) => (
+                      <option key={n} value={n}>
+                        Top-{n}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onRunRerank(topN)}
+                disabled={isReranking}
+                isLoading={isReranking}
+                className="gap-1.5 font-mono text-xs shadow-sm"
+              >
+                {hasReranked ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Re-score Pool</span>
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    <span>Run Cross-Encoder (Path A)</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Toolbar */}
         <div className="flex items-center justify-between pt-1 border-t border-border/40 text-xs">

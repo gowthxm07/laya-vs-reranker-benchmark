@@ -1,13 +1,14 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 2: Common Document Ingestion, Chunking, Embedding & Vector Retrieval Foundation**  
-> *Note: Phase 2 implements the real, local document-to-vector retrieval pipeline producing the shared `CandidateChunkPool`. Post-retrieval relevance evaluation (Cross-Encoder in Phase 3, Laya in Phase 4) and generation (Ollama `llama3.2:3b` in Phase 5) are connected incrementally.*
+> **Phase 3: Advanced RAG Cross-Encoder Reranking Baseline**  
+> *Note: Phase 3 implements the conventional Advanced RAG post-retrieval reranking pipeline using a local cross-encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`). The shared `CandidateChunkPool` produced in Phase 2 is scored via deep cross-attention, re-ranked, and filtered to Top-N without secondary retrieval. Laya relevance evaluation (Phase 4) and generation (Phase 5) will build on this baseline.*
 
-[![Phase 2](https://img.shields.io/badge/Status-Phase%202%20Retrieval%20Foundation-blue.svg)](#current-phase-2-status)
+[![Phase 3](https://img.shields.io/badge/Status-Phase%203%20Cross--Encoder%20Reranking-blue.svg)](#current-phase-3-capabilities)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![Embeddings](https://img.shields.io/badge/Ollama-nomic--embed--text-green.svg)](https://ollama.com/)
+[![Cross-Encoder](https://img.shields.io/badge/Cross--Encoder-ms--marco--MiniLM--L--6--v2-purple.svg)](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2)
 
 ---
 
@@ -74,7 +75,7 @@ To ensure scientific validity, both paths evaluate the **exact same candidate ch
      └──────────┬───────────┘                              └──────────┬───────────┘
                 │                                                     │
                 ▼                                                     ▼
-        [Retained Chunks]                                     [Retained Chunks]
+     [Reranked Top-N Pool]                                 [Retained Chunks]
                 │                                                     │
                 └───────────────────┬─────────────────────────────────┘
                                     │
@@ -85,16 +86,38 @@ To ensure scientific validity, both paths evaluate the **exact same candidate ch
                         └───────────────────────┘
 ```
 
-Detailed architectural diagrams and retrieval specifications are documented in:
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- [`docs/RETRIEVAL.md`](docs/RETRIEVAL.md)
-- [`docs/DESIGN_PATTERNS.md`](docs/DESIGN_PATTERNS.md)
+Detailed architectural diagrams and subsystem guides:
+- [`docs/RERANKING.md`](docs/RERANKING.md) — Cross-Encoder joint scoring, logit semantics & Top-N selection
+- [`docs/RETRIEVAL.md`](docs/RETRIEVAL.md) — Document parsing, deterministic chunking & vector store
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — High-level system design & component diagrams
+- [`docs/DESIGN_PATTERNS.md`](docs/DESIGN_PATTERNS.md) — Software design patterns implementation catalogue
+- [`docs/PHASES.md`](docs/PHASES.md) — Progressive project milestone tracker
 
 ---
 
-## 4. Current Phase 2 Capabilities
+## 4. Current Phase 3 Capabilities
 
-Phase 2 establishes the end-to-end local document retrieval foundation:
+Phase 3 implements the complete Path A baseline post-retrieval reranking pipeline:
+
+- **Joint Transformer Cross-Attention**:
+  - Scores `(query, passage)` pairs simultaneously using `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+  - Captures complex token-level interactions, negations, and semantic relations that bi-encoders miss.
+- **Persistent Python Worker IPC**:
+  - `scripts/cross_encoder_worker.py`: Dedicated Python child process communicating via line-delimited JSON IPC over stdin/stdout.
+  - Eliminates per-query cold-start overhead: initial model load takes ~22s, subsequent warm batch scoring runs in **~70–150ms on CPU**.
+- **Top-N Selection & Rank Shift Tracking**:
+  - Preserves original vector similarity scores and ranks (`originalRank`, `originalRetrievalScore`).
+  - Computes cross-encoder logit scores and reranked positions (`rerankedRank`).
+  - Tracks position shifts via `rankDelta` ($+2$ positions, $-1$ position, unchanged).
+  - Partitions candidates into `retained` (Top-N) and `discarded` sets.
+- **Pluggable Architecture**:
+  - `CrossEncoderProvider` interface and `CrossEncoderProviderFactory`.
+  - `MockCrossEncoderProvider` for deterministic, zero-dependency unit tests.
+  - `CrossEncoderEvaluator` Strategy implementation of `RelevanceEvaluator`.
+- **API & UI Extensions**:
+  - `POST /api/rerank`: Server endpoint executing batch reranking on candidate pools.
+  - `RerankedPoolInspector`: Interactive UI component displaying rank movements, logit comparisons, and passage text.
+  - `CandidatePoolInspector`: Integrated Top-N selector (default: 5) and reranking trigger.
 
 - **Multi-Format Document Parsing**:
   - PDF parser (`PdfDocumentParser`) preserving page numbers and boundaries.
