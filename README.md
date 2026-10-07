@@ -1,12 +1,13 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 1: Project Foundation & Architecture**  
-> *Note: Phase 1 establishes the architectural contracts, design system, models, design patterns, and UI shell. Downstream RAG execution, vector indexing, cross-encoders, and Laya service calls will be integrated incrementally in subsequent phases.*
+> **Phase 2: Common Document Ingestion, Chunking, Embedding & Vector Retrieval Foundation**  
+> *Note: Phase 2 implements the real, local document-to-vector retrieval pipeline producing the shared `CandidateChunkPool`. Post-retrieval relevance evaluation (Cross-Encoder in Phase 3, Laya in Phase 4) and generation (Ollama `llama3.2:3b` in Phase 5) are connected incrementally.*
 
-[![Phase 1](https://img.shields.io/badge/Status-Phase%201%20Foundation-blue.svg)](#current-phase-1-status)
+[![Phase 2](https://img.shields.io/badge/Status-Phase%202%20Retrieval%20Foundation-blue.svg)](#current-phase-2-status)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Embeddings](https://img.shields.io/badge/Ollama-nomic--embed--text-green.svg)](https://ollama.com/)
 
 ---
 
@@ -30,78 +31,127 @@ Standard RAG architectures frequently rely on one of two paradigms post-retrieva
   `Candidate Chunks → Laya Semantic Pruning/Filtering → Retained Chunks → LLM → Answer`
 
 ### The Fair Comparison Principle
-To ensure scientific validity, both paths evaluate the **exact same candidate chunk pool** for every query and feed their filtered context to the **same downstream LLM configuration** (local `llama3.2:3b` via Ollama). This isolates the post-retrieval relevance evaluator as the sole independent variable.
+To ensure scientific validity, both paths evaluate the **exact same candidate chunk pool** (`CandidateChunkPool`) for every query and feed their filtered context to the **same downstream LLM configuration** (local `llama3.2:3b` via Ollama). This isolates the post-retrieval relevance evaluator as the sole independent variable.
 
 ---
 
-## 3. Eventual System Architecture
+## 3. System Architecture & Data Flow
 
 ```
-User Query
-    ↓
-RAG Orchestrator / Facade
-    ↓
-Document Retriever
-    ↓
-Shared Candidate Chunks Pool
-    ├─────────────────────────────────────────┐
-    ▼                                         ▼
-Path A: Cross-Encoder Reranker           Path B: Laya Relevance Filter
-    ↓                                         ↓
-Retained Chunks Context                  Retained Chunks Context
-    ↓                                         ↓
-LLM Answer Generator (llama3.2:3b)       LLM Answer Generator (llama3.2:3b)
-    ↓                                         ↓
-Path A Answer                            Path B Answer
-    └────────────────────┬────────────────────┘
-                         ↓
-             Differential Benchmark Metrics & Trace
+                                      User Query
+                                           │
+                                           ▼
+                                ┌───────────────────────┐
+                                │   Document Ingestion  │ (PDF / TXT / MD)
+                                │        Pipeline       │
+                                └──────────┬────────────┘
+                                           │
+                                           ▼
+                                ┌───────────────────────┐
+                                │ Deterministic Chunker │ (Stable IDs & Pages)
+                                └──────────┬────────────┘
+                                           │
+                                           ▼
+                                ┌───────────────────────┐
+                                │ Local Vector Store    │ (Ollama Embeddings)
+                                └──────────┬────────────┘
+                                           │
+                                           ▼
+                                ┌───────────────────────┐
+                                │  Shared Retriever     │
+                                └──────────┬────────────┘
+                                           │
+                                           ▼
+                             [Shared Candidate Chunk Pool]
+                                 (CandidateChunkPool)
+                                    │             │
+                ┌───────────────────┘             └───────────────────┐
+                ▼                                                     ▼
+     ┌──────────────────────┐                              ┌──────────────────────┐
+     │  Phase 3: Adv RAG    │                              │  Phase 4: Laya RAG   │
+     │    Cross-Encoder     │                              │    Laya Evaluator    │
+     │       Reranker       │                              │  Relevance Filtering │
+     └──────────┬───────────┘                              └──────────┬───────────┘
+                │                                                     │
+                ▼                                                     ▼
+        [Retained Chunks]                                     [Retained Chunks]
+                │                                                     │
+                └───────────────────┬─────────────────────────────────┘
+                                    │
+                                    ▼
+                        ┌───────────────────────┐
+                        │ Downstream LLM Engine │ (llama3.2:3b local)
+                        │ & Head-to-Head Trace  │
+                        └───────────────────────┘
 ```
 
-Detailed architectural diagrams and subsystem boundaries are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Detailed architectural diagrams and retrieval specifications are documented in:
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/RETRIEVAL.md`](docs/RETRIEVAL.md)
+- [`docs/DESIGN_PATTERNS.md`](docs/DESIGN_PATTERNS.md)
 
 ---
 
-## 4. Software Design Patterns
+## 4. Current Phase 2 Capabilities
+
+Phase 2 establishes the end-to-end local document retrieval foundation:
+
+- **Multi-Format Document Parsing**:
+  - PDF parser (`PdfDocumentParser`) preserving page numbers and boundaries.
+  - Plain text (`TextDocumentParser`) and Markdown (`MarkdownDocumentParser`).
+  - Pluggable `DocumentParserFactory`.
+- **Deterministic Chunking (`DeterministicChunker`)**:
+  - Configurable character size (`CHUNK_SIZE = 500`) and overlap (`CHUNK_OVERLAP = 100`).
+  - Word-boundary aware segmentation.
+  - Stable IDs: `${documentId}_p${pageNumber}_c${chunkIndex}`.
+- **Local Embedding Provider (`OllamaEmbeddingProvider`)**:
+  - Powered by Ollama `nomic-embed-text` (768 dimensions).
+  - Offline `MockEmbeddingProvider` for deterministic unit testing.
+- **Persistent Local Vector Index (`LocalVectorStore`)**:
+  - In-memory cosine similarity search with atomic JSON persistence (`data/vector-store.json`).
+  - Zero native C++ compilation dependencies.
+- **Shared Candidate Chunk Pool (`CandidateChunkPool`)**:
+  - Produces immutable candidate pools with cosine similarity scores and initial ranks.
+  - Strictly preserves `decision: "pending"`, leaving post-retrieval relevance evaluation to future strategies.
+- **Server API Routes**:
+  - `POST /api/documents/ingest`: Multipart file upload or text payload ingestion.
+  - `GET /api/documents` & `DELETE /api/documents`: Vector index management.
+  - `POST /api/retrieve`: Semantic Top-K retrieval producing `CandidateChunkPool`.
+- **UI Shell Extensions**:
+  - `DocumentIngestionCard`: Drag-and-drop file upload, indexing stats, and duration counters.
+  - `CandidatePoolInspector`: Real-time inspection of retrieved candidate passages with full text expansion.
+
+---
+
+## 5. Software Design Patterns
 
 PatternRAG Lab applies six classical software design patterns:
 
 1. **Strategy Pattern** (`src/lib/patterns/strategy/`):
-   Defines the `RelevanceEvaluator` interface for interchangeable post-retrieval algorithms (`CrossEncoderEvaluator`, `LayaEvaluator`, `SimilarityThresholdEvaluator`).
+   Defines `RelevanceEvaluator` interface for post-retrieval algorithms (`CrossEncoderEvaluator`, `LayaEvaluator`, `SimilarityThresholdEvaluator`).
 2. **Adapter Pattern** (`src/lib/patterns/adapter/`):
-   Defines `ILayaAdapter` and `LayaAdapter` to decouple the core application from external Laya API specifications.
-3. **Factory Pattern** (`src/lib/patterns/factory/`):
-   `EvaluatorFactory` and `LLMProviderFactory` dynamically instantiate evaluators and model providers by key.
+   `ILayaAdapter` decouples core models from external Laya API specifications.
+3. **Factory Pattern** (`src/lib/patterns/factory/` & `src/lib/parsers/`):
+   `DocumentParserFactory`, `EmbeddingProviderFactory`, `EvaluatorFactory`, and `LLMProviderFactory`.
 4. **Facade Pattern** (`src/lib/patterns/facade/`):
-   `RAGOrchestratorFacade` provides a unified orchestration boundary (`executePipeline()`) concealing retrieval, filtering, and synthesis details.
+   `RAGOrchestratorFacade` provides unified orchestration.
 5. **Builder Pattern** (`src/lib/patterns/builder/`):
-   `ContextBuilder` and `PromptBuilder` provide fluent, deterministic prompt construction and token-budget enforcement.
+   `ContextBuilder` and `PromptBuilder` provide fluent prompt construction and token-budget limits.
 6. **Observer Pattern** (`src/lib/patterns/observer/`):
-   `ObservablePipelineSubject` and `TraceRecorderObserver` record phase durations and decision audits without side-effects.
-
-Comprehensive pattern documentation is available in [`docs/DESIGN_PATTERNS.md`](docs/DESIGN_PATTERNS.md).
+   `ObservablePipelineSubject` and `TraceRecorderObserver` record phase durations and decision audits.
 
 ---
 
-## 5. Current Phase 1 Status
+## 6. Project Roadmap (8 Phases)
 
-Phase 1 establishes the project foundation:
-
-- **Clean Design System**: Restrained, typography-driven technical interface (Linear/Raycast inspired) with CSS tokens, subtle 1px borders, and zero gratuitous gradients.
-- **Side-by-Side UI Shell**: Interactive comparison workspace with dataset selector, query input, side-by-side columns, and empty metrics state.
-- **Zero Fake Data**: Unexecuted pipelines clearly display authentic empty states (`Not run`, `Waiting for query`, `—`) rather than mocked benchmark numbers.
-- **Complete Domain Models**: `Chunk`, `TraceEvent`, `PipelineResult`, `Experiment`, and `EvaluationMetrics` typed in TypeScript.
-- **Design Pattern Implementations**: Strategy, Adapter, Factory, Facade, Builder, and Observer contracts fully implemented with unit test coverage.
-- **LLM Abstraction Prepared**: Configured for local `llama3.2:3b` via Ollama with secondary OpenRouter fallback contract.
-
----
-
-## 6. Future Phases at a Glance
-
-- **Phase 2**: Document ingestion, chunking, vector indexing, and Cross-Encoder re-ranker integration.
-- **Phase 3**: Laya API adapter connection and relevance filtering strategy.
-- **Phase 4**: Downstream generation via Ollama `llama3.2:3b` and side-by-side comparison execution.
-- **Phase 5**: Quantitative benchmark suite, faithfulness scoring, and batch evaluation runs.
+- **Phase 1**: Project Foundation & Architecture (Done)
+- **Phase 2**: Common Document Retrieval Foundation (Done)
+- **Phase 3**: Advanced RAG / Cross-Encoder Relevance Evaluation
+- **Phase 4**: Laya Relevance Evaluation
+- **Phase 5**: Shared Execution + Comparison Engine (Ollama `llama3.2:3b`)
+- **Phase 6**: Evaluation Metrics & Benchmark Suite
+- **Phase 7**: Dashboard, Trace & History Refinement
+- **Phase 8**: Final Testing, Documentation & Demonstration
 
 Track the full roadmap in [`docs/PHASES.md`](docs/PHASES.md).
 
@@ -112,7 +162,10 @@ Track the full roadmap in [`docs/PHASES.md`](docs/PHASES.md).
 ### Prerequisites
 - Node.js `v20+` or `v22+` (v22.19.0 recommended)
 - npm `10+` or `11+`
-- Git
+- Ollama with `nomic-embed-text` model:
+  ```bash
+  ollama pull nomic-embed-text
+  ```
 
 ### Installation
 ```bash
@@ -135,23 +188,22 @@ cp .env.example .env.local
 
 ### Configuration Variables
 ```env
-# Local LLM Provider (Target model for fair evaluation)
+# Local Embedding Provider
 OLLAMA_BASE_URL=http://localhost:11434
+EMBEDDING_PROVIDER=ollama
+EMBEDDING_MODEL=nomic-embed-text
+
+# Vector Storage Path
+VECTOR_STORE_PATH=./data/vector-store.json
+
+# Chunking Configuration (characters)
+CHUNK_SIZE=500
+CHUNK_OVERLAP=100
+TOP_K=10
+
+# Downstream Model (Phase 5)
 OLLAMA_MODEL=llama3.2:3b
-
-# Optional Remote Provider (Phase 1 does NOT require API keys)
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=meta-llama/llama-3.2-3b-instruct
-
-# Cross-Encoder Reranker Model
-RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
-
-# Laya Service Configuration
-LAYA_API_ENDPOINT=http://localhost:8080/v1
-LAYA_API_KEY=
 ```
-
-> **Note**: Phase 1 operates locally without requiring external API keys or remote calls.
 
 ---
 
@@ -168,11 +220,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 # Run TypeScript compilation check
 npm run type-check
 
-# Run unit tests
+# Run automated test suite
 npm test
 
 # Run code linter
 npm run lint
+
+# Verify local Ollama integration
+npx tsx scripts/test-local-integration.mjs
 ```
 
 ### Production Build

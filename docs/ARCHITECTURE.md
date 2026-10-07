@@ -20,11 +20,12 @@ Modern Retrieval-Augmented Generation (RAG) pipelines often suffer from context 
                                            │
                                            ▼
                                 ┌───────────────────────┐
-                                │   Document Retriever  │
+                                │   Document Retriever  │  (SharedRetrieverService)
                                 └──────────┬────────────┘
                                            │
                                            ▼
                            [Shared Candidate Chunks Pool]
+                               (CandidateChunkPool)
                                     │             │
                 ┌───────────────────┘             └───────────────────┐
                 ▼                                                     ▼
@@ -67,36 +68,48 @@ Modern Retrieval-Augmented Generation (RAG) pipelines often suffer from context 
 
 To establish scientific validity, PatternRAG Lab isolates **only** the post-retrieval relevance mechanism:
 
-1. **Identical Candidate Pool**: Both Path A and Path B receive the exact same initial candidates from the vector retriever. Neither pipeline benefits from different retrieval Top-K or disparate chunking.
+1. **Identical Candidate Pool**: Both Path A and Path B receive the exact same initial candidates from the vector retriever (`CandidateChunkPool`). Neither pipeline benefits from different retrieval Top-K, disparate embedding models, or different vector indexes.
 2. **Identical Generation Configuration**: Both pipelines synthesize prompts using standardized context templates (`PromptBuilder`, `ContextBuilder`) and feed the resulting context to the exact same downstream generation configuration (local `llama3.2:3b` via Ollama).
 3. **Differential Metrics**: The system measures isolated latency, token consumption, context reduction rate, and answer quality.
 
 ---
 
-## 3. Core Component Boundaries
+## 3. Subsystem Architecture
 
-### 3.1. Document Retriever
-Retrieves candidate passages from indexed document collections using dense bi-encoder embeddings or BM25/hybrid search. Outputs a collection of candidate `Chunk` objects with `decision: "pending"`.
+### 3.1 Document Ingestion & Parsers (`src/lib/parsers/`)
+- Multi-format ingestion: PDF, TXT, Markdown.
+- `PdfDocumentParser` extracts text using `pdf-parse` while preserving exact page boundaries and page numbers.
+- `DocumentParserFactory` decouples parsing invocation from file extensions.
 
-### 3.2. Relevance Evaluator Strategy (`RelevanceEvaluator`)
-The primary polymorphic boundary. Takes `(query, candidateChunks)` and outputs `retainedChunks`, `discardedChunks`, and `latencyMs`.
-- **Path A**: `CrossEncoderEvaluator` calculates joint cross-attention scores and retains Top-K chunks.
-- **Path B**: `LayaEvaluator` communicates via `LayaAdapter` to classify passages as relevant or irrelevant.
+### 3.2 Deterministic Chunking (`src/lib/chunking/`)
+- `DeterministicChunker` segments text into sliding windows with configurable character size (default: 500) and overlap (default: 100).
+- Chunks never cross page boundaries without page attribution.
+- Produces stable, deterministic chunk IDs: `${documentId}_p${pageNumber}_c${chunkIndex}`.
 
-### 3.3. Context & Prompt Builders (`IContextBuilder`, `IPromptBuilder`)
-Encapsulates token budget budgeting, header labeling, and system prompt constraints. Ensures prompts are synthesized identically across both pipelines without leaking implementation specifics.
+### 3.3 Embeddings & Local Vector Index (`src/lib/vector-store/` & `src/lib/providers/`)
+- **Embedding Provider**: `OllamaEmbeddingProvider` using local `nomic-embed-text` (768 dimensions).
+- **Vector Storage**: `LocalVectorStore` performs cosine similarity search with zero native compilation dependencies and atomic JSON persistence (`data/vector-store.json`).
 
-### 3.4. LLM Provider (`LLMProvider`)
+### 3.4 Shared Retriever (`src/server/services/retriever-service.ts`)
+- Implements `IRetriever`.
+- Embeds queries and executes Top-K similarity searches.
+- Packages results into an immutable `CandidateChunkPool`.
+- **Strict Boundary**: The retriever marks all chunks as `decision: "pending"` and leaves post-retrieval relevance evaluation entirely to future strategies.
+
+### 3.5 Relevance Evaluator Strategy (`RelevanceEvaluator`)
+The primary polymorphic boundary (Strategy pattern):
+- **Path A**: `CrossEncoderEvaluator` calculates joint cross-attention scores and retains Top-K chunks (Phase 3).
+- **Path B**: `LayaEvaluator` communicates via `LayaAdapter` to classify passages as relevant or irrelevant (Phase 4).
+
+### 3.6 Context & Prompt Builders (`IContextBuilder`, `IPromptBuilder`)
+Encapsulates token budget limits, header labeling, and system prompt constraints. Ensures prompts are synthesized identically across both pipelines without leaking implementation specifics.
+
+### 3.7 LLM Provider (`LLMProvider`)
 Interchangeable generation layer:
-- **Primary**: `OllamaProvider` targeting local `llama3.2:3b`.
+- **Primary**: `OllamaProvider` targeting local `llama3.2:3b` (Phase 5).
 - **Secondary**: `OpenRouterProvider` as an optional remote fallback.
-Decouples prompt generation from provider-specific SDKs.
 
-### 3.5. Telemetry & Trace Observer (`IPipelineObserver`)
+### 3.8 Telemetry & Trace Observer (`IPipelineObserver`)
 Listens to pipeline lifecycle events without polluting core evaluation routines. Captures phase durations (`TraceEvent`), chunk decision audits, and token counters.
 
----
-
-## 4. Phase 1 Implementation Status
-
-In **Phase 1**, all component interfaces, models, factories, builders, and observers have been specified in TypeScript with strict typing. Downstream network inference and vector database indexing will be introduced in subsequent phases.
+For full retrieval specifications, see [`docs/RETRIEVAL.md`](RETRIEVAL.md).

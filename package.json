@@ -14,12 +14,14 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.52.0",
     "next": "14.2.24",
+    "pdf-parse": "^2.4.5",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
