@@ -14,6 +14,7 @@ import {
   Scale,
   ArrowUpDown,
   CheckCircle2,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +26,9 @@ interface CandidatePoolInspectorProps {
   topN?: number;
   onTopNChange?: (topN: number) => void;
   hasReranked?: boolean;
+  onRunLayaFilter?: () => void;
+  isFilteringLaya?: boolean;
+  hasLayaFiltered?: boolean;
 }
 
 export function CandidatePoolInspector({
@@ -35,6 +39,9 @@ export function CandidatePoolInspector({
   topN = 5,
   onTopNChange,
   hasReranked = false,
+  onRunLayaFilter,
+  isFilteringLaya = false,
+  hasLayaFiltered = false,
 }: CandidatePoolInspectorProps) {
   const [expandedChunkIds, setExpandedChunkIds] = React.useState<Set<string>>(
     new Set()
@@ -186,6 +193,44 @@ export function CandidatePoolInspector({
                 )}
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* Phase 4 Action Bar: Laya Relevance Filtering Trigger */}
+        {onRunLayaFilter && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-surface-elevated/70 rounded-md border border-emerald-500/30 text-xs">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-emerald-400 shrink-0" />
+              <div>
+                <span className="font-semibold text-text-primary">
+                  Path B Evaluation: Laya Relevance Filtering
+                </span>
+                <span className="text-text-muted ml-1.5 hidden sm:inline">
+                  (Non-Autoregressive System 1 Gating)
+                </span>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => onRunLayaFilter()}
+              disabled={isFilteringLaya}
+              isLoading={isFilteringLaya}
+              className="gap-1.5 font-mono text-xs shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              {hasLayaFiltered ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Re-filter with Laya</span>
+                </>
+              ) : (
+                <>
+                  <Filter className="h-3.5 w-3.5" />
+                  <span>Run Laya Filter (Path B)</span>
+                </>
+              )}
+            </Button>
           </div>
         )}
 

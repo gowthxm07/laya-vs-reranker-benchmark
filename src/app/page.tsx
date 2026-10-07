@@ -7,6 +7,7 @@ import { DocumentIngestionCard } from "@/components/documents/document-ingestion
 import { BenchmarkControlBar } from "@/components/query/benchmark-control-bar";
 import { CandidatePoolInspector } from "@/components/retrieval/candidate-pool-inspector";
 import { RerankedPoolInspector } from "@/components/reranking/reranked-pool-inspector";
+import { LayaFilteredPoolInspector } from "@/components/laya/laya-filtered-pool-inspector";
 import { ComparisonWorkspace } from "@/components/comparison/comparison-workspace";
 import { MetricsDashboard } from "@/components/metrics/metrics-dashboard";
 import { DesignPatternInspector } from "@/components/patterns/design-pattern-inspector";
@@ -15,6 +16,7 @@ import { DocumentDataset } from "@/lib/types/dataset";
 import { Document } from "@/lib/types/document";
 import { CandidateChunkPool } from "@/lib/types/candidate-pool";
 import { RerankedCandidatePool } from "@/lib/types/reranker";
+import { LayaFilteredPool } from "@/lib/types/laya";
 import { Experiment } from "@/lib/types/experiment";
 import { Terminal, Cpu, AlertCircle } from "lucide-react";
 
@@ -44,6 +46,10 @@ export default function HomePage() {
     React.useState<RerankedCandidatePool | null>(null);
   const [isReranking, setIsReranking] = React.useState<boolean>(false);
   const [rerankTopN, setRerankTopN] = React.useState<number>(5);
+
+  // Phase 4 Laya state: real LayaFilteredPool from Laya relevance evaluation
+  const [layaPool, setLayaPool] = React.useState<LayaFilteredPool | null>(null);
+  const [isFilteringLaya, setIsFilteringLaya] = React.useState<boolean>(false);
 
   // Initial experiment model
   const [currentExperiment, setCurrentExperiment] = React.useState<Experiment>({
@@ -89,6 +95,7 @@ export default function HomePage() {
     setTotalIndexedChunks(0);
     setCandidatePool(null);
     setRerankedPool(null);
+    setLayaPool(null);
     setRunNotice("Vector store cleared.");
   };
 
@@ -98,6 +105,7 @@ export default function HomePage() {
     setIsRetrieving(true);
     setErrorMessage(null);
     setRerankedPool(null);
+    setLayaPool(null);
 
     try {
       const res = await fetch("/api/retrieve", {
@@ -291,6 +299,139 @@ export default function HomePage() {
     }
   };
 
+  const handleRunLayaFilter = async () => {
+    if (!candidatePool || candidatePool.candidateChunks.length === 0) return;
+
+    setIsFilteringLaya(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch("/api/laya/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidatePool,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Laya relevance evaluation failed.");
+      }
+
+      const pool: LayaFilteredPool = data.filteredPool;
+      setLayaPool(pool);
+
+      // Update Path B in current experiment
+      setCurrentExperiment((prev) => ({
+        ...prev,
+        layaResult: {
+          pipelineId: "laya-rag",
+          strategyName: "Laya Relevance Filter",
+          status: "completed",
+          candidateChunkCount: pool.totalCandidates,
+          retainedChunkCount: pool.retainedCount,
+          discardedChunkCount: pool.discardedCount,
+          retrievalLatencyMs: candidatePool.retrievalLatencyMs,
+          relevanceEvaluationLatencyMs: pool.metrics.evaluationLatencyMs,
+          totalLatencyMs:
+            candidatePool.retrievalLatencyMs + pool.metrics.evaluationLatencyMs,
+          retainedChunks: pool.retainedCandidates.map((c) => ({
+            id: c.id,
+            documentId: c.documentId,
+            text: c.text,
+            source: c.source,
+            pageNumber: c.pageNumber,
+            section: c.section,
+            metadata: c.metadata,
+            retrievalScore: c.originalRetrievalScore,
+            relevanceScore: c.keepProbability ?? 1.0,
+            decision: "retained",
+            rank: c.originalRank,
+            relevanceRationale: `Laya decision: KEEP (P(keep): ${
+              c.keepProbability !== undefined
+                ? `${(c.keepProbability * 100).toFixed(1)}%`
+                : "N/A"
+            }, confidence: ${c.layaConfidence?.toFixed(4) ?? "N/A"})`,
+          })),
+          discardedChunks: pool.discardedCandidates.map((c) => ({
+            id: c.id,
+            documentId: c.documentId,
+            text: c.text,
+            source: c.source,
+            pageNumber: c.pageNumber,
+            section: c.section,
+            metadata: c.metadata,
+            retrievalScore: c.originalRetrievalScore,
+            relevanceScore: c.keepProbability ?? 0.0,
+            decision: "discarded",
+            rank: c.originalRank,
+            relevanceRationale: `Laya decision: DROP (P(drop): ${
+              c.dropProbability !== undefined
+                ? `${(c.dropProbability * 100).toFixed(1)}%`
+                : "N/A"
+            }, confidence: ${c.layaConfidence?.toFixed(4) ?? "N/A"})`,
+          })),
+          trace: [
+            {
+              id: `trace_laya_ret_${Date.now()}`,
+              timestamp: pool.retrievedAt,
+              pipelineId: "laya-rag",
+              phase: "chunks_retrieved",
+              label: `Retrieved ${pool.totalCandidates} candidate passages via nomic-embed-text`,
+              status: "success",
+              durationMs: candidatePool.retrievalLatencyMs,
+              details: {
+                topK: pool.totalCandidates,
+                embeddingModel: candidatePool.embeddingModel,
+              },
+            },
+            {
+              id: `trace_laya_eval_${Date.now()}`,
+              timestamp: pool.evaluatedAt,
+              pipelineId: "laya-rag",
+              phase: "relevance_evaluation_completed",
+              label: `Laya evaluated ${pool.totalCandidates} candidates in ${pool.metrics.evaluationLatencyMs}ms`,
+              status: "success",
+              durationMs: pool.metrics.evaluationLatencyMs,
+              details: {
+                model: pool.layaModel,
+                isColdStart: pool.metrics.isColdStart,
+                averagePerCandidateMs: pool.metrics.averageCandidateLatencyMs,
+              },
+            },
+            {
+              id: `trace_laya_prune_${Date.now()}`,
+              timestamp: pool.evaluatedAt + 1,
+              pipelineId: "laya-rag",
+              phase: "chunks_filtered",
+              label: `Laya retained ${pool.retainedCount} passages, pruned ${pool.discardedCount} (${pool.contextReductionPercent}% context reduction)`,
+              status: "success",
+              details: {
+                totalCandidates: pool.totalCandidates,
+                retainedCount: pool.retainedCount,
+                discardedCount: pool.discardedCount,
+                contextReductionPercent: pool.contextReductionPercent,
+              },
+            },
+          ],
+        },
+      }));
+
+      setRunNotice(
+        `Path B Laya relevance filtering complete! Evaluated ${pool.totalCandidates} candidates in ${pool.metrics.evaluationLatencyMs}ms. Retained ${pool.retainedCount} passages (${pool.contextReductionPercent}% context reduction).`
+      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to evaluate candidates with Laya.";
+      setErrorMessage(message);
+    } finally {
+      setIsFilteringLaya(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-text-primary selection:bg-accent-subtle selection:text-accent">
       {/* Global Header */}
@@ -361,6 +502,9 @@ export default function HomePage() {
           topN={rerankTopN}
           onTopNChange={setRerankTopN}
           hasReranked={!!rerankedPool}
+          onRunLayaFilter={handleRunLayaFilter}
+          isFilteringLaya={isFilteringLaya}
+          hasLayaFiltered={!!layaPool}
         />
 
         {/* 3b. Cross-Encoder Reranked Pool Inspector (Phase 3 Baseline) */}
@@ -371,7 +515,15 @@ export default function HomePage() {
           />
         )}
 
-        {/* 4. Side-by-Side Comparison Workspace (Phase 3 Path A Active, Phase 4 Path B Next) */}
+        {/* 3c. Laya Filtered Pool Inspector (Phase 4 Semantic Pruning) */}
+        {layaPool && (
+          <LayaFilteredPoolInspector
+            layaPool={layaPool}
+            isLoading={isFilteringLaya}
+          />
+        )}
+
+        {/* 4. Side-by-Side Comparison Workspace (Path A & Path B Active) */}
         <ComparisonWorkspace experiment={currentExperiment} />
 
         {/* 5. Differential Metrics Dashboard */}
@@ -382,7 +534,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 text-text-secondary font-medium mb-2">
             <Cpu className="h-4 w-4 text-accent" />
             <h3 className="text-text-primary font-semibold">
-              Experimental RAG Architecture (Phase 2 Retrieval + Phase 3 Cross-Encoder)
+              Experimental RAG Architecture (Phase 2 Retrieval + Phase 3 Cross-Encoder + Phase 4 Laya)
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-text-muted leading-relaxed">
@@ -394,21 +546,21 @@ export default function HomePage() {
             </div>
             <div>
               <strong className="text-text-secondary block mb-0.5">
-                2. Real Local Embeddings (Ollama)
+                2. Path A: Joint Cross-Attention
               </strong>
-              Passages and queries are embedded locally using `nomic-embed-text` (768 dimensions), avoiding cloud API fees and ensuring 100% reproducible local execution.
+              Cross-encoder scores `(query, chunk)` pairs with deep transformer attention (`ms-marco-MiniLM-L-6-v2`), generating relative logit signals for Top-N selection.
             </div>
             <div>
               <strong className="text-text-secondary block mb-0.5">
-                3. Joint Cross-Attention Reranking
+                3. Path B: Laya System 1 Gating
               </strong>
-              Path A scores `(query, chunk)` pairs jointly with `cross-encoder/ms-marco-MiniLM-L-6-v2`, capturing complex token-level interactions that bi-encoders miss.
+              Laya evaluates passages via non-autoregressive reinforcement-learned decision rules, assigning strict KEEP/DROP decisions with calibrated probabilities.
             </div>
             <div>
               <strong className="text-text-secondary block mb-0.5">
-                4. Strict Post-Retrieval Boundary
+                4. Zero Secondary Retrieval
               </strong>
-              The reranker evaluates candidates without re-retrieving. Top-N chunks are selected for downstream context, preserving fair benchmark controls for Phase 4 (Laya).
+              Neither strategy executes additional database searches or modifies chunk text. Context is filtered or reranked strictly post-retrieval for fair Phase 5 generation.
             </div>
           </div>
         </section>

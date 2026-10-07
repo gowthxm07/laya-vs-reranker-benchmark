@@ -99,7 +99,7 @@ To establish scientific validity, PatternRAG Lab isolates **only** the post-retr
 ### 3.5 Relevance Evaluator Strategy (`RelevanceEvaluator`)
 The primary polymorphic boundary (Strategy pattern):
 - **Path A (Completed in Phase 3)**: `CrossEncoderEvaluator` calculates joint cross-attention scores via `cross-encoder/ms-marco-MiniLM-L-6-v2`. Managed by `CrossEncoderRerankingService` and `PythonCrossEncoderProvider` over a persistent Python worker IPC channel, sorting candidates and retaining Top-N chunks.
-- **Path B (Reserved for Phase 4)**: `LayaEvaluator` communicates via `LayaAdapter` to classify passages as relevant or irrelevant.
+- **Path B (Completed in Phase 4)**: `LayaEvaluator` communicates via `LayaAdapter` and `PythonLayaProvider` (`D:\laya`) to evaluate passages using non-autoregressive System 1 decisions, assigning calibrated KEEP/DROP decisions and pruning candidate context without secondary retrieval.
 
 ### 3.6 Context & Prompt Builders (`IContextBuilder`, `IPromptBuilder`)
 Encapsulates token budget limits, header labeling, and system prompt constraints. Ensures prompts are synthesized identically across both pipelines without leaking implementation specifics.
@@ -117,5 +117,6 @@ Listens to pipeline lifecycle events without polluting core evaluation routines.
 ## 4. Documentation References
 - Retrieval Architecture: [`docs/RETRIEVAL.md`](RETRIEVAL.md)
 - Cross-Encoder Reranking: [`docs/RERANKING.md`](RERANKING.md)
+- Laya Relevance Evaluation: [`docs/LAYA.md`](LAYA.md)
 - Design Patterns: [`docs/DESIGN_PATTERNS.md`](DESIGN_PATTERNS.md)
 - Implementation Roadmap: [`docs/PHASES.md`](PHASES.md)

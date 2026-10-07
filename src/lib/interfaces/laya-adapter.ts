@@ -47,7 +47,11 @@ export interface ILayaAdapter {
   ): Promise<{
     retainedChunks: Chunk[];
     discardedChunks: Chunk[];
+    allCandidates?: Chunk[];
     adapterLatencyMs: number;
+    modelLoadLatencyMs?: number;
+    isColdStart?: boolean;
+    layaModel?: string;
     rawResponse?: LayaRawResponse;
   }>;
 }

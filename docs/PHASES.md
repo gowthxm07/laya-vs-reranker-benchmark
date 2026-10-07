@@ -11,7 +11,7 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 | **Phase 1** | **Project Foundation & Architecture** | Project setup, design system, core domain models, design pattern contracts, initial UI shell, documentation | **Completed** |
 | **Phase 2** | **Common Document Retrieval Foundation** | PDF/TXT/MD ingestion, page preservation, deterministic chunking, Ollama embeddings, local vector index, shared `CandidateChunkPool` | **Completed** |
 | **Phase 3** | **Advanced RAG / Cross-Encoder Relevance Evaluation** | Cross-Encoder model loading (`cross-encoder/ms-marco-MiniLM-L-6-v2`), persistent Python worker IPC, candidate re-scoring, Top-N selection, rank shift tracking | **Completed** |
-| **Phase 4** | **Laya Relevance Evaluation** | Laya adapter integration, semantic relevance filtering strategy, candidate pruning | Planned |
+| **Phase 4** | **Laya Relevance Evaluation** | Laya adapter integration, `D:\laya` runtime validation, non-autoregressive System 1 decision heads, persistent worker IPC, KEEP/DROP gating, context reduction calculation | **Completed** |
 | **Phase 5** | **Shared Execution + Comparison Engine** | Downstream generation (Ollama `llama3.2:3b`), dual-pipeline orchestrator facade, side-by-side execution | Planned |
 | **Phase 6** | **Evaluation Metrics & Benchmark Suite** | Faithfulness scoring, context reduction rates, differential latency/token analysis, batch query suite | Planned |
 | **Phase 7** | **Dashboard, Trace & History Refinement** | Observer decision trace visualization, historical experiment storage, comparative analytics | Planned |
@@ -72,10 +72,23 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 
 ---
 
-### Phase 4 — Laya Relevance Evaluation (Planned)
-- Connect `LayaAdapter` to the actual Laya relevance service API.
-- Implement `LayaEvaluator` strategy invoking `LayaAdapter.filterCandidates()`.
-- Validate chunk acceptance/rejection semantics and evaluate pruning rate.
+### Phase 4 — Laya Relevance Evaluation (Completed)
+- [x] Validated real local Laya checkpoint (`D:\laya`) and `laya 0.3.20` runtime.
+- [x] Built persistent Python Laya worker (`scripts/laya_worker.py`) communicating via line-delimited JSON IPC over stdin/stdout.
+- [x] Formulated typed binary choice question contract (`keep` vs `drop`) with calibrated probabilities and confidence metrics.
+- [x] Implemented `PythonLayaProvider` with process lifecycle management and cold-start tracking.
+- [x] Implemented `MockLayaProvider` for deterministic, zero-dependency unit tests.
+- [x] Implemented `LayaProviderFactory` for runtime provider resolution and mock injection.
+- [x] Implemented `LayaAdapter` adapting domain chunks to Laya format, validating decisions, and attaching calibrated probabilities.
+- [x] Implemented `LayaEvaluator` Strategy implementing `RelevanceEvaluator`.
+- [x] Implemented `LayaRelevanceFilteringService` coordinating candidate evaluation, candidate lineage preservation, and context reduction calculation.
+- [x] Created `POST /api/laya/evaluate` API endpoint accepting `{ candidatePool }`.
+- [x] Created `LayaFilteredPoolInspector` UI component displaying KEEP/DROP badges, probabilities, and passage inspection.
+- [x] Updated `CandidatePoolInspector` with "Run Laya Filter (Path B)" trigger button.
+- [x] Connected Path B in `ComparisonWorkspace` with real retained/discarded chunks, latency diagnostics, and decision traces.
+- [x] Added 12 comprehensive unit tests in `src/__tests__/laya.test.ts` (total 47 tests passing across all project suites).
+- [x] Verified real local Laya integration test (`scripts/test-laya-integration.py`) against `D:\laya`.
+- [x] Created comprehensive documentation in `docs/LAYA.md`.
 
 ---
 

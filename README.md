@@ -1,14 +1,15 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 3: Advanced RAG Cross-Encoder Reranking Baseline**  
-> *Note: Phase 3 implements the conventional Advanced RAG post-retrieval reranking pipeline using a local cross-encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`). The shared `CandidateChunkPool` produced in Phase 2 is scored via deep cross-attention, re-ranked, and filtered to Top-N without secondary retrieval. Laya relevance evaluation (Phase 4) and generation (Phase 5) will build on this baseline.*
+> **Phase 4: Laya Relevance Evaluation**  
+> *Note: Phase 4 implements the Path B relevance filtering pipeline using a local Laya non-autoregressive evaluator (`ModernBERT-large` backbone at `D:\laya`). Consuming the exact same shared `CandidateChunkPool` produced in Phase 2, Laya performs calibrated System 1 binary gating (`KEEP` or `DROP`) per passage without secondary retrieval. Both Path A (Cross-Encoder reranking) and Path B (Laya filtering) are now fully operational. Downstream generation and head-to-head comparison will be implemented in Phase 5.*
 
-[![Phase 3](https://img.shields.io/badge/Status-Phase%203%20Cross--Encoder%20Reranking-blue.svg)](#current-phase-3-capabilities)
+[![Phase 4](https://img.shields.io/badge/Status-Phase%204%20Laya%20Relevance%20Filtering-blue.svg)](#current-phase-4-capabilities)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![Embeddings](https://img.shields.io/badge/Ollama-nomic--embed--text-green.svg)](https://ollama.com/)
 [![Cross-Encoder](https://img.shields.io/badge/Cross--Encoder-ms--marco--MiniLM--L--6--v2-purple.svg)](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2)
+[![Laya](https://img.shields.io/badge/Laya-ModernBERT--large%20421M-orange.svg)](docs/LAYA.md)
 
 ---
 
@@ -87,6 +88,7 @@ To ensure scientific validity, both paths evaluate the **exact same candidate ch
 ```
 
 Detailed architectural diagrams and subsystem guides:
+- [`docs/LAYA.md`](docs/LAYA.md) — Laya non-autoregressive relevance filtering, worker IPC, and calibration
 - [`docs/RERANKING.md`](docs/RERANKING.md) — Cross-Encoder joint scoring, logit semantics & Top-N selection
 - [`docs/RETRIEVAL.md`](docs/RETRIEVAL.md) — Document parsing, deterministic chunking & vector store
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — High-level system design & component diagrams
@@ -95,44 +97,55 @@ Detailed architectural diagrams and subsystem guides:
 
 ---
 
-## 4. Current Phase 3 Capabilities
+## 4. Current Phase 4 Capabilities
 
-Phase 3 implements the complete Path A baseline post-retrieval reranking pipeline:
+PatternRAG Lab supports both post-retrieval relevance strategies on identical candidate pools:
 
+### Path B — Laya Relevance Filtering (Phase 4)
+- **Fast Non-Autoregressive Gating**:
+  - Leverages local ModernBERT-large backbone (`D:\laya`, 421M parameters) running System 1 classification.
+  - Generates binary `KEEP` or `DROP` decisions per passage in single forward passes without autoregressive generation loops.
+- **Calibrated Probabilities & Confidence**:
+  - Reports normalized probability distribution (`probabilities: { keep: float, drop: float }`), categorical `confidence`, and `answer_confidence`.
+  - Zero fabricated numeric rankings: preserves natural decision boundaries.
+- **Persistent Python Worker IPC**:
+  - `scripts/laya_worker.py`: Dedicated child worker communicating via line-delimited JSON IPC over stdin/stdout.
+  - Keeps model weights warm in VRAM/RAM: cold start is instrumented (~24-27s), while warm batch evaluations execute in ~1.8-2.1s on CPU.
+- **Clean Adapter & Provider Pattern**:
+  - `LayaProvider` interface with `PythonLayaProvider` and zero-dependency `MockLayaProvider`.
+  - `LayaAdapter` (`ILayaAdapter`) maps raw candidate pools to Laya task format and validates strict `keep`/`drop` normalization.
+  - `LayaEvaluator` implements the `RelevanceEvaluator` Strategy.
+- **API & UI Extensions**:
+  - `POST /api/laya/evaluate`: Server endpoint running Laya relevance filtering on candidate pools.
+  - `LayaFilteredPoolInspector`: Interactive UI component displaying retained/dropped passages, probability distributions, confidence badges, and token reduction metrics.
+  - `CandidatePoolInspector`: Integrated "Run Laya Filter (Path B)" trigger alongside Cross-Encoder.
+
+### Path A — Cross-Encoder Reranking Baseline (Phase 3)
 - **Joint Transformer Cross-Attention**:
   - Scores `(query, passage)` pairs simultaneously using `cross-encoder/ms-marco-MiniLM-L-6-v2`.
-  - Captures complex token-level interactions, negations, and semantic relations that bi-encoders miss.
+  - Captures token-level interactions, negations, and semantic relations.
 - **Persistent Python Worker IPC**:
-  - `scripts/cross_encoder_worker.py`: Dedicated Python child process communicating via line-delimited JSON IPC over stdin/stdout.
-  - Eliminates per-query cold-start overhead: initial model load takes ~22s, subsequent warm batch scoring runs in **~70–150ms on CPU**.
+  - `scripts/cross_encoder_worker.py`: Dedicated child worker with line-delimited JSON IPC (~70–150ms on CPU warm).
 - **Top-N Selection & Rank Shift Tracking**:
-  - Preserves original vector similarity scores and ranks (`originalRank`, `originalRetrievalScore`).
-  - Computes cross-encoder logit scores and reranked positions (`rerankedRank`).
-  - Tracks position shifts via `rankDelta` ($+2$ positions, $-1$ position, unchanged).
-  - Partitions candidates into `retained` (Top-N) and `discarded` sets.
-- **Pluggable Architecture**:
-  - `CrossEncoderProvider` interface and `CrossEncoderProviderFactory`.
-  - `MockCrossEncoderProvider` for deterministic, zero-dependency unit tests.
-  - `CrossEncoderEvaluator` Strategy implementation of `RelevanceEvaluator`.
+  - Computes cross-encoder logits and tracks position shifts (`rankDelta`).
+  - Partitions candidates into retained (Top-N) and discarded sets.
 - **API & UI Extensions**:
-  - `POST /api/rerank`: Server endpoint executing batch reranking on candidate pools.
-  - `RerankedPoolInspector`: Interactive UI component displaying rank movements, logit comparisons, and passage text.
-  - `CandidatePoolInspector`: Integrated Top-N selector (default: 5) and reranking trigger.
+  - `POST /api/rerank`: Server endpoint executing batch reranking.
+  - `RerankedPoolInspector`: Interactive UI component displaying rank movements and logit comparisons.
 
+### Shared Retrieval Foundation (Phase 2)
 - **Multi-Format Document Parsing**:
   - PDF parser (`PdfDocumentParser`) preserving page numbers and boundaries.
   - Plain text (`TextDocumentParser`) and Markdown (`MarkdownDocumentParser`).
   - Pluggable `DocumentParserFactory`.
 - **Deterministic Chunking (`DeterministicChunker`)**:
   - Configurable character size (`CHUNK_SIZE = 500`) and overlap (`CHUNK_OVERLAP = 100`).
-  - Word-boundary aware segmentation.
-  - Stable IDs: `${documentId}_p${pageNumber}_c${chunkIndex}`.
+  - Word-boundary aware segmentation with stable IDs: `${documentId}_p${pageNumber}_c${chunkIndex}`.
 - **Local Embedding Provider (`OllamaEmbeddingProvider`)**:
   - Powered by Ollama `nomic-embed-text` (768 dimensions).
   - Offline `MockEmbeddingProvider` for deterministic unit testing.
 - **Persistent Local Vector Index (`LocalVectorStore`)**:
   - In-memory cosine similarity search with atomic JSON persistence (`data/vector-store.json`).
-  - Zero native C++ compilation dependencies.
 - **Shared Candidate Chunk Pool (`CandidateChunkPool`)**:
   - Produces immutable candidate pools with cosine similarity scores and initial ranks.
   - Strictly preserves `decision: "pending"`, leaving post-retrieval relevance evaluation to future strategies.
@@ -169,8 +182,8 @@ PatternRAG Lab applies six classical software design patterns:
 
 - **Phase 1**: Project Foundation & Architecture (Done)
 - **Phase 2**: Common Document Retrieval Foundation (Done)
-- **Phase 3**: Advanced RAG / Cross-Encoder Relevance Evaluation
-- **Phase 4**: Laya Relevance Evaluation
+- **Phase 3**: Advanced RAG / Cross-Encoder Relevance Evaluation (Done)
+- **Phase 4**: Laya Relevance Evaluation (Done)
 - **Phase 5**: Shared Execution + Comparison Engine (Ollama `llama3.2:3b`)
 - **Phase 6**: Evaluation Metrics & Benchmark Suite
 - **Phase 7**: Dashboard, Trace & History Refinement
@@ -185,6 +198,7 @@ Track the full roadmap in [`docs/PHASES.md`](docs/PHASES.md).
 ### Prerequisites
 - Node.js `v20+` or `v22+` (v22.19.0 recommended)
 - npm `10+` or `11+`
+- Python `3.10+` with PyTorch, transformers, sentence-transformers, and `laya` (`pip install laya`)
 - Ollama with `nomic-embed-text` model:
   ```bash
   ollama pull nomic-embed-text
@@ -211,7 +225,7 @@ cp .env.example .env.local
 
 ### Configuration Variables
 ```env
-# Local Embedding Provider
+# Local Embedding Provider (Phase 2)
 OLLAMA_BASE_URL=http://localhost:11434
 EMBEDDING_PROVIDER=ollama
 EMBEDDING_MODEL=nomic-embed-text
@@ -223,6 +237,15 @@ VECTOR_STORE_PATH=./data/vector-store.json
 CHUNK_SIZE=500
 CHUNK_OVERLAP=100
 TOP_K=10
+
+# Cross-Encoder Reranker (Phase 3 Path A)
+CROSS_ENCODER_PROVIDER=python
+CROSS_ENCODER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+RERANK_TOP_N=5
+
+# Laya Relevance Evaluator (Phase 4 Path B)
+LAYA_PROVIDER=python
+LAYA_MODEL_PATH=D:\laya
 
 # Downstream Model (Phase 5)
 OLLAMA_MODEL=llama3.2:3b
@@ -243,7 +266,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 # Run TypeScript compilation check
 npm run type-check
 
-# Run automated test suite
+# Run automated test suite (47+ unit tests)
 npm test
 
 # Run code linter
@@ -251,6 +274,9 @@ npm run lint
 
 # Verify local Ollama integration
 npx tsx scripts/test-local-integration.mjs
+
+# Verify local Laya integration
+python scripts/test-laya-integration.py
 ```
 
 ### Production Build

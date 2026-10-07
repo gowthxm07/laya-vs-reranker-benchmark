@@ -5,6 +5,9 @@ import {
 } from "../../interfaces/relevance-evaluator";
 import { CrossEncoderProvider } from "../../interfaces/cross-encoder-provider";
 import { CrossEncoderProviderFactory } from "../../providers/cross-encoder-provider-factory";
+import { ILayaAdapter } from "../../interfaces/laya-adapter";
+import { LayaAdapter } from "../../adapters/laya-adapter";
+import { LayaProvider } from "../../interfaces/laya-provider";
 import { Chunk } from "../../types/chunk";
 
 export {
@@ -118,21 +121,77 @@ export class CrossEncoderEvaluator implements RelevanceEvaluator {
 }
 
 /**
- * [STRATEGY IMPLEMENTATION STUB: LayaEvaluator]
- * Will be populated in Phase 4 using the LayaAdapter.
+ * [STRATEGY IMPLEMENTATION: LayaEvaluator]
+ * Real Laya post-retrieval relevance evaluator strategy (Path B).
+ * Uses LayaAdapter to classify candidates as KEEP or DROP and prune candidate pool.
  */
 export class LayaEvaluator implements RelevanceEvaluator {
   readonly id = "laya";
   readonly name = "Laya Relevance Filter";
   readonly description =
-    "Post-retrieval relevance scoring and pruning via Laya engine.";
+    "Non-autoregressive System 1 relevance evaluation and semantic pruning.";
+  private adapter: ILayaAdapter;
+
+  constructor(adapterOrProvider?: ILayaAdapter | LayaProvider) {
+    if (adapterOrProvider && "filterCandidates" in adapterOrProvider) {
+      this.adapter = adapterOrProvider;
+    } else if (adapterOrProvider) {
+      this.adapter = new LayaAdapter(adapterOrProvider as LayaProvider);
+    } else {
+      this.adapter = new LayaAdapter();
+    }
+  }
+
+  async evaluate(
+    query: string,
+    candidateChunks: Chunk[],
+    options?: Record<string, unknown>
+  ): Promise<RelevanceEvaluationResult> {
+    return this.evaluateRelevance({ query, candidateChunks, options });
+  }
 
   async evaluateRelevance(
     request: RelevanceEvaluationRequest
   ): Promise<RelevanceEvaluationResult> {
-    throw new Error(
-      `LayaEvaluator execution is planned for Phase 4. Evaluator strategy interface is active. (Query: "${request.query}")`
+    const { query, candidateChunks, options } = request;
+
+    if (!candidateChunks || candidateChunks.length === 0) {
+      return {
+        evaluatorId: this.id,
+        retainedChunks: [],
+        discardedChunks: [],
+        latencyMs: 0,
+        metadata: { candidateCount: 0, retainedCount: 0, reductionPercent: 0 },
+      };
+    }
+
+    const filterResult = await this.adapter.filterCandidates(
+      query,
+      candidateChunks,
+      options as { topK?: number; threshold?: number }
     );
+
+    const total = candidateChunks.length;
+    const retained = filterResult.retainedChunks.length;
+    const reductionPercent = Number(
+      (((total - retained) / Math.max(1, total)) * 100).toFixed(1)
+    );
+
+    return {
+      evaluatorId: this.id,
+      retainedChunks: filterResult.retainedChunks,
+      discardedChunks: filterResult.discardedChunks,
+      latencyMs: filterResult.adapterLatencyMs,
+      metadata: {
+        model: filterResult.layaModel,
+        candidateCount: total,
+        retainedCount: retained,
+        discardedCount: filterResult.discardedChunks.length,
+        contextReductionPercent: reductionPercent,
+        isColdStart: filterResult.isColdStart,
+        modelLoadLatencyMs: filterResult.modelLoadLatencyMs,
+      },
+    };
   }
 }
 

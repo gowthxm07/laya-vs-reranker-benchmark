@@ -32,7 +32,7 @@ export const EVALUATOR_STRATEGIES: Record<
     description:
       "Evaluates retrieved candidate passages via Laya's relevance engine to filter out tangential, noisy, or unhelpful chunks before prompt synthesis.",
     pipelineRole: "Path B (Laya RAG)",
-    isAvailable: false,
+    isAvailable: true,
   },
   "similarity-threshold": {
     type: "similarity-threshold",
