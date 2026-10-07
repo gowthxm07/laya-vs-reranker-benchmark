@@ -1,15 +1,16 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 4: Laya Relevance Evaluation**  
-> *Note: Phase 4 implements the Path B relevance filtering pipeline using a local Laya non-autoregressive evaluator (`ModernBERT-large` backbone at `D:\laya`). Consuming the exact same shared `CandidateChunkPool` produced in Phase 2, Laya performs calibrated System 1 binary gating (`KEEP` or `DROP`) per passage without secondary retrieval. Both Path A (Cross-Encoder reranking) and Path B (Laya filtering) are now fully operational. Downstream generation and head-to-head comparison will be implemented in Phase 5.*
+> **Phase 5: Controlled Cross-Encoder vs Laya LLM Comparison**  
+> *Note: Phase 5 connects both Path A (Cross-Encoder reranking) and Path B (Laya relevance filtering) to the SAME downstream LLM (`llama3.2:3b` via local Ollama) consuming the exact same shared `CandidateChunkPool`. Both paths execute under identical prompt structures and generation parameters (`temperature: 0, seed: 42`) in two modes: Native Strategy and Context-Budget. Head-to-head metrics, answers, stage latencies, and token budgets are reported objectively without premature winner declaration.*
 
-[![Phase 4](https://img.shields.io/badge/Status-Phase%204%20Laya%20Relevance%20Filtering-blue.svg)](#current-phase-4-capabilities)
+[![Phase 5](https://img.shields.io/badge/Status-Phase%205%20Controlled%20LLM%20Comparison-success.svg)](#current-phase-5-capabilities)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![Embeddings](https://img.shields.io/badge/Ollama-nomic--embed--text-green.svg)](https://ollama.com/)
 [![Cross-Encoder](https://img.shields.io/badge/Cross--Encoder-ms--marco--MiniLM--L--6--v2-purple.svg)](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2)
 [![Laya](https://img.shields.io/badge/Laya-ModernBERT--large%20421M-orange.svg)](docs/LAYA.md)
+[![LLM](https://img.shields.io/badge/LLM-llama3.2:3b-blue.svg)](https://ollama.com/)
 
 ---
 
@@ -88,6 +89,7 @@ To ensure scientific validity, both paths evaluate the **exact same candidate ch
 ```
 
 Detailed architectural diagrams and subsystem guides:
+- [`docs/COMPARISON.md`](docs/COMPARISON.md) — Controlled same-LLM comparison, dual modes, prompt isolation, latency & token instrumentation
 - [`docs/LAYA.md`](docs/LAYA.md) — Laya non-autoregressive relevance filtering, worker IPC, and calibration
 - [`docs/RERANKING.md`](docs/RERANKING.md) — Cross-Encoder joint scoring, logit semantics & Top-N selection
 - [`docs/RETRIEVAL.md`](docs/RETRIEVAL.md) — Document parsing, deterministic chunking & vector store
@@ -97,9 +99,28 @@ Detailed architectural diagrams and subsystem guides:
 
 ---
 
-## 4. Current Phase 4 Capabilities
+## 4. Current Phase 5 Capabilities
 
-PatternRAG Lab supports both post-retrieval relevance strategies on identical candidate pools:
+PatternRAG Lab supports both post-retrieval relevance strategies evaluated head-to-head against the same downstream LLM:
+
+### Controlled Same-LLM Comparison Engine (Phase 5)
+- **Same Model, Temperature & Seed**:
+  - Both Path A and Path B feed their context to the identical local `llama3.2:3b` model via Ollama.
+  - Deterministic generation configuration (`temperature: 0, seed: 42`) eliminates variance.
+- **Identical Prompt Structure & Zero Leakage**:
+  - Context passages are rendered with standard headers (`[Passage N (source, page P)]`) without score leakage, logit leakage, or evaluator branding.
+  - Common prompt template with identical instructions across both paths.
+- **Dual Comparison Modes**:
+  - **Native Strategy Mode**: Each approach retains its natural output (Cross-Encoder Top-N vs Laya `KEEP` classifications).
+  - **Context-Budget Mode**: Enforces a strict budget (e.g. 3 chunks max) with deterministic tie-breaking.
+- **Exact Stage Latencies & Token Accounting**:
+  - Decomposes latency into initial retrieval, relevance evaluation, context building, and LLM inference.
+  - Reports exact prompt eval tokens and completion eval tokens directly from Ollama.
+- **Empty-Context Safeguard & Modal Context Inspection**:
+  - Fallback-free empty-context handling with explicit prompt when zero chunks are retained.
+  - Modal context viewer allowing researchers to inspect the exact verbatim text passed to the LLM.
+- **Strict Scientific Objectivity**:
+  - Zero automated winner declaration or subjective grading.
 
 ### Path B — Laya Relevance Filtering (Phase 4)
 - **Fast Non-Autoregressive Gating**:
@@ -184,7 +205,7 @@ PatternRAG Lab applies six classical software design patterns:
 - **Phase 2**: Common Document Retrieval Foundation (Done)
 - **Phase 3**: Advanced RAG / Cross-Encoder Relevance Evaluation (Done)
 - **Phase 4**: Laya Relevance Evaluation (Done)
-- **Phase 5**: Shared Execution + Comparison Engine (Ollama `llama3.2:3b`)
+- **Phase 5**: Same-LLM Controlled Cross-Encoder vs Laya Comparison (Done)
 - **Phase 6**: Evaluation Metrics & Benchmark Suite
 - **Phase 7**: Dashboard, Trace & History Refinement
 - **Phase 8**: Final Testing, Documentation & Demonstration
@@ -199,9 +220,10 @@ Track the full roadmap in [`docs/PHASES.md`](docs/PHASES.md).
 - Node.js `v20+` or `v22+` (v22.19.0 recommended)
 - npm `10+` or `11+`
 - Python `3.10+` with PyTorch, transformers, sentence-transformers, and `laya` (`pip install laya`)
-- Ollama with `nomic-embed-text` model:
+- Ollama with `nomic-embed-text` and `llama3.2:3b` models:
   ```bash
   ollama pull nomic-embed-text
+  ollama pull llama3.2:3b
   ```
 
 ### Installation
@@ -247,8 +269,11 @@ RERANK_TOP_N=5
 LAYA_PROVIDER=python
 LAYA_MODEL_PATH=D:\laya
 
-# Downstream Model (Phase 5)
-OLLAMA_MODEL=llama3.2:3b
+# Downstream LLM Provider & Comparison (Phase 5)
+LLM_PROVIDER=ollama
+OLLAMA_LLM_MODEL=llama3.2:3b
+COMPARISON_MODE=native
+MAX_CONTEXT_BUDGET=3
 ```
 
 ---
@@ -266,7 +291,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 # Run TypeScript compilation check
 npm run type-check
 
-# Run automated test suite (47+ unit tests)
+# Run automated test suite (63+ unit tests)
 npm test
 
 # Run code linter
@@ -277,6 +302,9 @@ npx tsx scripts/test-local-integration.mjs
 
 # Verify local Laya integration
 python scripts/test-laya-integration.py
+
+# Verify end-to-end controlled comparison integration
+npx tsx scripts/test-comparison-integration.ts
 ```
 
 ### Production Build

@@ -106,17 +106,26 @@ Encapsulates token budget limits, header labeling, and system prompt constraints
 
 ### 3.7 LLM Provider (`LLMProvider`)
 Interchangeable generation layer:
-- **Primary**: `OllamaProvider` targeting local `llama3.2:3b` (Phase 5).
-- **Secondary**: `OpenRouterProvider` as an optional remote fallback.
+- **Primary (Phase 5 Completed)**: `OllamaLLMProvider` targeting local `llama3.2:3b` at `http://localhost:11434/api/generate` with zero temperature and fixed seed (42).
+- **Mock Testing Provider**: `MockLLMProvider` ensuring hermetic deterministic unit test suites.
+- **Provider Factory**: `LLMProviderFactory` selects provider based on `LLM_PROVIDER` environment variable.
 
-### 3.8 Telemetry & Trace Observer (`IPipelineObserver`)
+### 3.8 Comparison Orchestrator (`RAGComparisonOrchestrator`)
+- Coordinates fair, controlled side-by-side benchmark runs.
+- Consumes identical `CandidateChunkPool`.
+- Evaluates Native Strategy Mode vs Context-Budget Mode.
+- Builds context with shared `ContextBuilder` and generates answers sequentially on the SAME local `llama3.2:3b`.
+- Captures independent relevance, context building, and LLM generation latencies.
+
+### 3.9 Telemetry & Trace Observer (`IPipelineObserver`)
 Listens to pipeline lifecycle events without polluting core evaluation routines. Captures phase durations (`TraceEvent`), chunk decision audits, and token counters.
 
 ---
 
 ## 4. Documentation References
-- Retrieval Architecture: [`docs/RETRIEVAL.md`](RETRIEVAL.md)
-- Cross-Encoder Reranking: [`docs/RERANKING.md`](RERANKING.md)
+- Controlled LLM Comparison: [`docs/COMPARISON.md`](COMPARISON.md)
 - Laya Relevance Evaluation: [`docs/LAYA.md`](LAYA.md)
+- Cross-Encoder Reranking: [`docs/RERANKING.md`](RERANKING.md)
+- Retrieval Architecture: [`docs/RETRIEVAL.md`](RETRIEVAL.md)
 - Design Patterns: [`docs/DESIGN_PATTERNS.md`](DESIGN_PATTERNS.md)
 - Implementation Roadmap: [`docs/PHASES.md`](PHASES.md)

@@ -6,6 +6,7 @@ import { LayaRelevanceFilteringService } from "../server/services/laya-filtering
 import { CandidateChunkPool } from "../lib/types/candidate-pool";
 import { Chunk } from "../lib/types/chunk";
 import { LayaProvider } from "../lib/interfaces/laya-provider";
+import { LayaDecisionType } from "../lib/types/laya";
 
 describe("Phase 4 — Laya Relevance Evaluation & Semantic Pruning", () => {
   let mockProvider: MockLayaProvider;
@@ -244,7 +245,7 @@ describe("Phase 4 — Laya Relevance Evaluation & Semantic Pruning", () => {
         decisions: [
           {
             chunkId: "chunk-1",
-            decision: "maybe" as unknown as LayaDecision, // Invalid decision
+            decision: "maybe" as unknown as LayaDecisionType, // Invalid decision
           },
         ],
         evaluationLatencyMs: 10,

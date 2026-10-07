@@ -7,3 +7,4 @@ export * from "./document";
 export * from "./candidate-pool";
 export * from "./reranker";
 export * from "./laya";
+export * from "./comparison";

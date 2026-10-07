@@ -92,17 +92,28 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 
 ---
 
-### Phase 5 — Shared Execution + Comparison Engine (Planned)
-- Connect `OllamaProvider` to local `llama3.2:3b` generation model.
-- Implement `RAGOrchestratorFacade.runComparisonBenchmark()`.
-- Pass identical candidate pools to both paths, generate answers side-by-side, and record execution trace events.
+### Phase 5 — Shared Execution + Comparison Engine (Completed)
+- [x] Implemented `LLMProvider` contract with `OllamaLLMProvider` targeting local `llama3.2:3b` at `http://localhost:11434/api/generate`.
+- [x] Implemented `MockLLMProvider` capturing prompt/parameter history and simulating errors for hermetic unit testing.
+- [x] Implemented `LLMProviderFactory` with runtime model configuration via `LLM_PROVIDER` and `OLLAMA_LLM_MODEL`.
+- [x] Created shared prompt template in `PromptBuilder.createBenchmarkPrompt()` enforcing prompt parity.
+- [x] Created standardized context assembly in `ContextBuilder.createBenchmarkBuilder()` omitting score leakage.
+- [x] Implemented `RAGComparisonOrchestrator` coordinating controlled side-by-side benchmark runs on the SAME candidate pool and LLM.
+- [x] Implemented Mode A (Native Strategy Mode) and Mode B (Context-Budget Mode) with deterministic Laya over-budget policy.
+- [x] Implemented strict empty-context policy generating explicit insufficient-evidence answers without fallback chunks.
+- [x] Created `POST /api/compare` API route accepting `{ query, candidatePool, mode, topN, maxContextChunks }`.
+- [x] Upgraded `ComparisonWorkspace` with mode selectors, budget inputs, latency/token summaries, and `ContextViewerModal`.
+- [x] Added 16 deterministic unit tests in `src/__tests__/comparison.test.ts` (total 63 tests passing across 5 project suites).
+- [x] Verified live local integration test (`scripts/test-comparison-integration.ts`) running Cross-Encoder, Laya (`D:\laya`), and Ollama (`llama3.2:3b`).
+- [x] Created comprehensive documentation in `docs/COMPARISON.md`.
 
 ---
 
 ### Phase 6 — Evaluation Metrics & Benchmark Suite (Planned)
-- Implement differential metrics: Latency delta, token savings, context reduction rate.
-- Implement faithfulness and relevance quality scoring.
-- Support automated benchmark execution across query test suites.
+- Implement objective evaluation metrics: Answer faithfulness, answer relevance, context reduction efficiency.
+- Measure context precision, recall, and hallucination rates.
+- Implement automated benchmark runner across curated query collections.
+- Establish empirical head-to-head comparison without premature bias.
 
 ---
 

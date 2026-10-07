@@ -67,6 +67,12 @@ export class ContextBuilder implements IContextBuilder {
       if (this.formatOptions.includeDocumentId && chunk.source) {
         headerParts.push(`Source: ${chunk.source}`);
       }
+      if (this.formatOptions.includePageNumber && chunk.pageNumber !== undefined) {
+        headerParts.push(`Page: ${chunk.pageNumber}`);
+      }
+      if (this.formatOptions.includeChunkId && chunk.id) {
+        headerParts.push(`Chunk: ${chunk.id}`);
+      }
       if (this.formatOptions.includeScores && chunk.relevanceScore !== undefined) {
         headerParts.push(`Score: ${chunk.relevanceScore.toFixed(3)}`);
       }
@@ -84,5 +90,22 @@ export class ContextBuilder implements IContextBuilder {
     }
 
     return formattedPassages.join(this.formatOptions.chunkDelimiter || "\n---\n");
+  }
+
+  /**
+   * Factory method to create a standardized context builder for benchmark comparisons.
+   * Ensures identical formatting without scoring leakage or strategy bias.
+   */
+  public static createBenchmarkBuilder(): ContextBuilder {
+    const builder = new ContextBuilder();
+    builder.setFormatOptions({
+      includeDocumentId: true,
+      includeSourceMetadata: true,
+      includePageNumber: true,
+      includeChunkId: true,
+      includeScores: false, // Strict control: no score bias between paths
+      chunkDelimiter: "\n\n---\n\n",
+    });
+    return builder;
   }
 }

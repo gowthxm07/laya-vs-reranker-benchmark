@@ -17,6 +17,7 @@ import { Document } from "@/lib/types/document";
 import { CandidateChunkPool } from "@/lib/types/candidate-pool";
 import { RerankedCandidatePool } from "@/lib/types/reranker";
 import { LayaFilteredPool } from "@/lib/types/laya";
+import { ComparisonResult, ComparisonMode } from "@/lib/types/comparison";
 import { Experiment } from "@/lib/types/experiment";
 import { Terminal, Cpu, AlertCircle } from "lucide-react";
 
@@ -50,6 +51,11 @@ export default function HomePage() {
   // Phase 4 Laya state: real LayaFilteredPool from Laya relevance evaluation
   const [layaPool, setLayaPool] = React.useState<LayaFilteredPool | null>(null);
   const [isFilteringLaya, setIsFilteringLaya] = React.useState<boolean>(false);
+
+  // Phase 5 Comparison state: real side-by-side comparison result with same LLM
+  const [comparisonResult, setComparisonResult] =
+    React.useState<ComparisonResult | null>(null);
+  const [isComparing, setIsComparing] = React.useState<boolean>(false);
 
   // Initial experiment model
   const [currentExperiment, setCurrentExperiment] = React.useState<Experiment>({
@@ -96,6 +102,7 @@ export default function HomePage() {
     setCandidatePool(null);
     setRerankedPool(null);
     setLayaPool(null);
+    setComparisonResult(null);
     setRunNotice("Vector store cleared.");
   };
 
@@ -432,6 +439,107 @@ export default function HomePage() {
     }
   };
 
+  const handleRunComparison = async (
+    mode: ComparisonMode,
+    topN: number,
+    maxContextChunks: number
+  ) => {
+    if (!candidatePool || candidatePool.candidateChunks.length === 0) return;
+
+    setIsComparing(true);
+    setErrorMessage(null);
+    setRunNotice(
+      `Running controlled head-to-head comparison [Mode: ${mode}] against Ollama llama3.2:3b...`
+    );
+
+    try {
+      const res = await fetch("/api/compare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: candidatePool.query,
+          candidatePool,
+          mode,
+          topN,
+          maxContextChunks,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Controlled comparison execution failed.");
+      }
+
+      const comp: ComparisonResult = data.result;
+      setComparisonResult(comp);
+
+      // Update current experiment for metrics and pipeline panels
+      setCurrentExperiment({
+        id: comp.id,
+        query: comp.query,
+        dataset: selectedDataset,
+        timestamp: comp.timestamp,
+        status: "completed",
+        advancedRagResult: {
+          pipelineId: "advanced-rag",
+          strategyName: comp.crossEncoder.strategyName,
+          status: comp.crossEncoder.error ? "failed" : "completed",
+          answer: comp.crossEncoder.answer,
+          inputTokens: comp.crossEncoder.promptTokens,
+          outputTokens: comp.crossEncoder.completionTokens,
+          totalTokens: comp.crossEncoder.totalTokens,
+          candidateChunkCount: comp.sharedRetrieval.candidateCount,
+          retainedChunkCount: comp.crossEncoder.retainedCount,
+          discardedChunkCount: comp.crossEncoder.discardedCount,
+          retainedChunks: comp.crossEncoder.selectedChunks,
+          retrievalLatencyMs: comp.sharedRetrieval.retrievalLatencyMs,
+          relevanceEvaluationLatencyMs: comp.crossEncoder.relevanceLatencyMs,
+          generationLatencyMs: comp.crossEncoder.generationLatencyMs,
+          totalLatencyMs: comp.crossEncoder.totalLatencyMs,
+          error: comp.crossEncoder.error,
+          trace: comp.trace.filter((e) => e.pipelineId === "advanced-rag"),
+        },
+        layaResult: {
+          pipelineId: "laya-rag",
+          strategyName: comp.laya.strategyName,
+          status: comp.laya.error ? "failed" : "completed",
+          answer: comp.laya.answer,
+          inputTokens: comp.laya.promptTokens,
+          outputTokens: comp.laya.completionTokens,
+          totalTokens: comp.laya.totalTokens,
+          candidateChunkCount: comp.sharedRetrieval.candidateCount,
+          retainedChunkCount: comp.laya.retainedCount,
+          discardedChunkCount: comp.laya.discardedCount,
+          retainedChunks: comp.laya.selectedChunks,
+          retrievalLatencyMs: comp.sharedRetrieval.retrievalLatencyMs,
+          relevanceEvaluationLatencyMs: comp.laya.relevanceLatencyMs,
+          generationLatencyMs: comp.laya.generationLatencyMs,
+          totalLatencyMs: comp.laya.totalLatencyMs,
+          error: comp.laya.error,
+          trace: comp.trace.filter((e) => e.pipelineId === "laya-rag"),
+        },
+        comparison: {
+          latencyDeltaMs:
+            comp.crossEncoder.totalLatencyMs - comp.laya.totalLatencyMs,
+          tokenDelta: comp.crossEncoder.totalTokens - comp.laya.totalTokens,
+          retainedChunkDelta:
+            comp.crossEncoder.retainedCount - comp.laya.retainedCount,
+          summaryNote: `Comparison completed in ${comp.overallLatencyMs}ms. Cross-Encoder: ${comp.crossEncoder.retainedCount} chunks retained, ${comp.crossEncoder.totalLatencyMs}ms. Laya: ${comp.laya.retainedCount} chunks retained, ${comp.laya.totalLatencyMs}ms.`,
+        },
+      });
+
+      setRunNotice(
+        `Comparison completed in ${comp.overallLatencyMs}ms! Both paths generated answers with the same Ollama llama3.2:3b model under strict identical controls.`
+      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to run comparison.";
+      setErrorMessage(message);
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-text-primary selection:bg-accent-subtle selection:text-accent">
       {/* Global Header */}
@@ -524,7 +632,13 @@ export default function HomePage() {
         )}
 
         {/* 4. Side-by-Side Comparison Workspace (Path A & Path B Active) */}
-        <ComparisonWorkspace experiment={currentExperiment} />
+        <ComparisonWorkspace
+          experiment={currentExperiment}
+          candidatePool={candidatePool}
+          comparisonResult={comparisonResult}
+          onRunComparison={handleRunComparison}
+          isComparing={isComparing}
+        />
 
         {/* 5. Differential Metrics Dashboard */}
         <MetricsDashboard experiment={currentExperiment} />
@@ -534,7 +648,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 text-text-secondary font-medium mb-2">
             <Cpu className="h-4 w-4 text-accent" />
             <h3 className="text-text-primary font-semibold">
-              Experimental RAG Architecture (Phase 2 Retrieval + Phase 3 Cross-Encoder + Phase 4 Laya)
+              Experimental RAG Architecture (Retrieval + Cross-Encoder + Laya + Shared LLM Generation)
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-text-muted leading-relaxed">

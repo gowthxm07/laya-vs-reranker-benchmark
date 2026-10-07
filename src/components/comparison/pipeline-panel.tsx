@@ -68,29 +68,37 @@ export function PipelinePanel({
         </p>
 
         {/* Quick Diagnostic Strip */}
-        <div className="flex items-center gap-3 pt-1 text-[11px] font-mono text-text-muted border-t border-border/40">
-          <span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] font-mono text-text-muted border-t border-border/40">
+          <div>
             Retained:{" "}
             <strong className="text-text-secondary">
               {retainedCount !== undefined ? retainedCount : "—"}
             </strong>
-          </span>
-          <span>•</span>
-          <span>
-            Filtered:{" "}
+          </div>
+          <div>
+            Eval:{" "}
             <strong className="text-text-secondary">
-              {discardedCount !== undefined ? discardedCount : "—"}
+              {result?.relevanceEvaluationLatencyMs !== undefined
+                ? `${Math.round(result.relevanceEvaluationLatencyMs)} ms`
+                : "—"}
             </strong>
-          </span>
-          <span>•</span>
-          <span>
-            Total Latency:{" "}
+          </div>
+          <div>
+            LLM:{" "}
+            <strong className="text-text-secondary">
+              {result?.generationLatencyMs !== undefined
+                ? `${Math.round(result.generationLatencyMs)} ms`
+                : "—"}
+            </strong>
+          </div>
+          <div>
+            Total:{" "}
             <strong className="text-text-secondary">
               {result?.totalLatencyMs !== undefined
                 ? `${Math.round(result.totalLatencyMs)} ms`
                 : "—"}
             </strong>
-          </span>
+          </div>
         </div>
       </CardHeader>
 
@@ -158,11 +166,46 @@ export function PipelinePanel({
       {/* Tab Content Body */}
       <CardContent className="p-4 flex-1 flex flex-col justify-start">
         {activeTab === "answer" && (
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col space-y-3">
             {result?.answer ? (
-              <div className="rounded border border-border/80 bg-surface-elevated/40 p-3.5 text-xs text-text-primary leading-relaxed whitespace-pre-wrap font-sans">
-                {result.answer}
-              </div>
+              <>
+                <div className="rounded border border-border/80 bg-surface-elevated/40 p-3.5 text-xs text-text-primary leading-relaxed whitespace-pre-wrap font-sans">
+                  {result.answer}
+                </div>
+
+                {/* Token Usage & Context Inspection Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded bg-canvas-subtle border border-border/60 text-[11px] font-mono text-text-muted">
+                  <div className="flex items-center gap-2">
+                    <span>
+                      Prompt:{" "}
+                      <strong className="text-text-secondary">
+                        {result.inputTokens ?? "—"}
+                      </strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Gen:{" "}
+                      <strong className="text-text-secondary">
+                        {result.outputTokens ?? "—"}
+                      </strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Total:{" "}
+                      <strong className="text-text-secondary">
+                        {result.totalTokens ?? "—"}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab("retained")}
+                    className="text-accent hover:underline flex items-center gap-1"
+                  >
+                    View Retained Context ({retainedCount ?? 0})
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="py-14 text-center border border-dashed border-border/70 rounded-md bg-canvas-subtle/30 flex flex-col items-center justify-center">
                 <FileText className="h-7 w-7 text-text-muted mb-2 opacity-60" />

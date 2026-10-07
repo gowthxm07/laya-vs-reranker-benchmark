@@ -61,4 +61,23 @@ export class PromptBuilder implements IPromptBuilder {
       userQuery: this.userQuery,
     };
   }
+
+  /**
+   * Factory method to create an identical benchmark prompt payload for both Path A and Path B.
+   * Enforces exact prompt parity between relevance strategies.
+   */
+  public static createBenchmarkPrompt(query: string, contextText: string): PromptPayload {
+    const builder = new PromptBuilder();
+    builder
+      .setSystemInstruction(
+        "You are a factual, concise question-answering assistant. " +
+        "Answer the user query strictly using the provided context passages. " +
+        "If the context does not contain enough information, explicitly state: \"The provided context does not contain sufficient information to answer this question.\" " +
+        "Do not invent facts or extrapolate beyond what is directly stated."
+      )
+      .setUserQuery(query)
+      .setContext(contextText);
+    return builder.build();
+  }
 }
+

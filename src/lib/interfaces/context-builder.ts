@@ -7,6 +7,8 @@ export interface ContextFormatOptions {
   includeDocumentId?: boolean;
   includeScores?: boolean;
   includeSourceMetadata?: boolean;
+  includePageNumber?: boolean;
+  includeChunkId?: boolean;
   chunkDelimiter?: string;
 }
 

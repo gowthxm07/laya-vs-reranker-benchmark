@@ -12,6 +12,7 @@ export interface PromptPayload {
  */
 export interface GenerationOptions {
   temperature?: number;
+  topP?: number;
   maxTokens?: number;
   stopSequences?: string[];
   seed?: number;
@@ -28,7 +29,9 @@ export interface GenerationResult {
   completionTokens: number;
   totalTokens: number;
   latencyMs: number;
+  isTokenCountEstimated?: boolean;
   finishReason?: string;
+  rawMetadata?: Record<string, unknown>;
 }
 
 /**
