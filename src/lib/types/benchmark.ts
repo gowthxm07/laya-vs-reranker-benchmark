@@ -53,6 +53,25 @@ export interface AnswerQualityMetrics {
   factCoverage: number;
   noAnswerCompliance?: boolean;
   faithfulnessScore: number;
+  lexicalGroundednessScore?: number;
+}
+
+export interface CandidateChunkDecision {
+  id: string;
+  source?: string;
+  pageNumber?: number;
+  textSnippet: string;
+  fullText?: string;
+  isGroundTruthRelevant: boolean;
+  crossEncoder: {
+    selected: boolean;
+    score?: number;
+    rank?: number;
+  };
+  laya: {
+    selected: boolean;
+    decision: "keep" | "drop";
+  };
 }
 
 export type FailureClassification =
@@ -117,6 +136,7 @@ export interface QueryBenchmarkResult {
     relevanceLatencyDiffMs: number;
     totalLatencyDiffMs: number;
   };
+  candidateDecisions?: CandidateChunkDecision[];
 }
 
 export interface MetricAggregate {

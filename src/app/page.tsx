@@ -10,6 +10,7 @@ import { RerankedPoolInspector } from "@/components/reranking/reranked-pool-insp
 import { LayaFilteredPoolInspector } from "@/components/laya/laya-filtered-pool-inspector";
 import { ComparisonWorkspace } from "@/components/comparison/comparison-workspace";
 import { BenchmarkSuiteView } from "@/components/benchmark/benchmark-suite-view";
+import { BenchmarkHistoryView } from "@/components/benchmark/benchmark-history-view";
 import { MetricsDashboard } from "@/components/metrics/metrics-dashboard";
 import { DesignPatternInspector } from "@/components/patterns/design-pattern-inspector";
 import { SAMPLE_DATASETS } from "@/lib/config/datasets";
@@ -19,8 +20,9 @@ import { CandidateChunkPool } from "@/lib/types/candidate-pool";
 import { RerankedCandidatePool } from "@/lib/types/reranker";
 import { LayaFilteredPool } from "@/lib/types/laya";
 import { ComparisonResult, ComparisonMode } from "@/lib/types/comparison";
+import { BenchmarkSuiteResult } from "@/lib/types/benchmark";
 import { Experiment } from "@/lib/types/experiment";
-import { Terminal, Cpu, AlertCircle, BarChart3, Compass } from "lucide-react";
+import { Terminal, Cpu, AlertCircle, BarChart3, Compass, History } from "lucide-react";
 
 export default function HomePage() {
   const [selectedDataset, setSelectedDataset] = React.useState<DocumentDataset>(
@@ -58,8 +60,10 @@ export default function HomePage() {
     React.useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = React.useState<boolean>(false);
 
-  // View Navigation: "lab" (Interactive Workspace) vs "benchmark" (Phase 6 Objective Suite)
-  const [activeTab, setActiveTab] = React.useState<"lab" | "benchmark">("lab");
+  // View Navigation: 3-tier IA: "lab", "benchmark", "history"
+  const [activeTab, setActiveTab] = React.useState<"lab" | "benchmark" | "history">("lab");
+  const [loadedBenchmarkResult, setLoadedBenchmarkResult] =
+    React.useState<BenchmarkSuiteResult | null>(null);
 
   // Initial experiment model
   const [currentExperiment, setCurrentExperiment] = React.useState<Experiment>({
@@ -582,12 +586,33 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Main View Mode Navigation Bar */}
+        {/* Compact Scientific Controls & Protocol Summary Row */}
+        <div className="py-2.5 px-4 rounded-lg border border-border/80 bg-surface/70 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-text-muted">
+            <span className="text-text-primary font-semibold">Scientific Protocol:</span>
+            <span>36 Evaluation Cases</span>
+            <span className="text-border-subtle">•</span>
+            <span>9 Retrieval Conditions</span>
+            <span className="text-border-subtle">•</span>
+            <span>2 Strategies (Cross-Encoder vs Laya)</span>
+            <span className="text-border-subtle">•</span>
+            <span>Shared Candidate Pool</span>
+            <span className="text-border-subtle">•</span>
+            <span className="text-accent font-medium">Shared LLM (llama3.2:3b)</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-text-muted text-[11px]">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>nomic-embed-text · MiniLM-L-6-v2 · ModernBERT-large</span>
+          </div>
+        </div>
+
+        {/* Main View Mode Navigation Bar (3-Tier Information Architecture) */}
         <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="inline-flex rounded-lg border border-border p-1 bg-surface">
+          <div className="inline-flex rounded-lg border border-border p-1 bg-surface font-mono text-xs">
             <button
               onClick={() => setActiveTab("lab")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs transition-colors ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md transition-colors ${
                 activeTab === "lab"
                   ? "bg-accent text-white font-semibold shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated/40"
@@ -598,25 +623,47 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => setActiveTab("benchmark")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs transition-colors ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md transition-colors ${
                 activeTab === "benchmark"
                   ? "bg-accent text-white font-semibold shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated/40"
               }`}
             >
               <BarChart3 className="h-4 w-4" />
-              <span>Controlled Benchmark Suite (Phase 6)</span>
+              <span>Controlled Benchmark Suite</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md transition-colors ${
+                activeTab === "history"
+                  ? "bg-accent text-white font-semibold shadow-sm"
+                  : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated/40"
+              }`}
+            >
+              <History className="h-4 w-4" />
+              <span>Run History & Results</span>
             </button>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-text-muted">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Ollama llama3.2:3b & nomic-embed-text</span>
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            <span>Strict Scientific Controls</span>
           </div>
         </div>
 
-        {activeTab === "benchmark" ? (
-          <BenchmarkSuiteView />
+        {activeTab === "history" ? (
+          <BenchmarkHistoryView
+            onLoadRunToDashboard={(res) => {
+              setLoadedBenchmarkResult(res);
+              setActiveTab("benchmark");
+            }}
+            onNavigateToBenchmark={() => setActiveTab("benchmark")}
+          />
+        ) : activeTab === "benchmark" ? (
+          <BenchmarkSuiteView
+            initialResult={loadedBenchmarkResult}
+            onResultChange={setLoadedBenchmarkResult}
+          />
         ) : (
           <>
             {/* 1. Document Ingestion Card (Phase 2 Component) */}

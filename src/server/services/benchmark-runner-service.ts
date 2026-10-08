@@ -260,6 +260,36 @@ export class BenchmarkRunnerService {
       totalLatencyDiffMs: ceEval.latencies.totalMs - layaEval.latencies.totalMs,
     };
 
+    // 7. Per-candidate chunk side-by-side decision comparison
+    const candidateDecisions: import("@/lib/types/benchmark").CandidateChunkDecision[] =
+      caseItem.candidateChunks.map((c) => {
+        const selectedCe = compResult.crossEncoder.selectedChunks.find(
+          (sc) => sc.id === c.id
+        );
+        const ceSelected = ceEval.selectedChunkIds.includes(c.id);
+        const layaSelected = layaEval.selectedChunkIds.includes(c.id);
+        const isRel = caseItem.relevantChunkIds.includes(c.id);
+
+        return {
+          id: c.id,
+          source: c.source,
+          pageNumber: c.pageNumber,
+          textSnippet:
+            c.text.length > 140 ? c.text.substring(0, 140) + "..." : c.text,
+          fullText: c.text,
+          isGroundTruthRelevant: isRel,
+          crossEncoder: {
+            selected: ceSelected,
+            score: selectedCe?.relevanceScore ?? c.relevanceScore,
+            rank: selectedCe?.rank ?? c.rank,
+          },
+          laya: {
+            selected: layaSelected,
+            decision: layaSelected ? ("keep" as const) : ("drop" as const),
+          },
+        };
+      });
+
     return {
       queryId: caseItem.id,
       category: caseItem.category,
@@ -276,6 +306,7 @@ export class BenchmarkRunnerService {
       laya: layaEval,
       failureAnalysis,
       pairedDifferences,
+      candidateDecisions,
     };
   }
 

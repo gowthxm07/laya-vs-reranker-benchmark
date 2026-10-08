@@ -8,6 +8,7 @@ import { LayaRelevanceFilteringService } from "../server/services/laya-filtering
 import { MockCrossEncoderProvider } from "../lib/providers/mock-cross-encoder-provider";
 import { MockLayaProvider } from "../lib/providers/mock-laya-provider";
 import { MockLLMProvider } from "../lib/providers/mock-llm-provider";
+import { generateBenchmarkCsv } from "../lib/utils/benchmark-export";
 
 describe("Phase 6: Objective Benchmark & Evaluation Suite", () => {
   // =========================================================================
@@ -400,6 +401,112 @@ describe("Phase 6: Objective Benchmark & Evaluation Suite", () => {
       expect(suiteResult.metadata.mode).toBe("context-budget");
       expect(suiteResult.metadata.contextBudget).toBe(2);
       expect(suiteResult.queryResults[0].crossEncoder.contextMetrics.retainedCount).toBeLessThanOrEqual(2);
+    });
+  });
+
+  // =========================================================================
+  // 6. PHASE 7: DASHBOARD ANALYSIS REFINEMENTS & METRIC AUDITS
+  // =========================================================================
+  describe("Phase 7: Dashboard Analysis Refinements & Metric Audits", () => {
+    it("should synthesize context-grounded mock answers reflecting retained passages", async () => {
+      const mockLLM = new MockLLMProvider();
+      const result = await mockLLM.generateAnswer({
+        systemInstruction: "You are a factual assistant.",
+        contextText: "[Passage 1]\nFlashAttention reduces memory I/O by tiling computation across GPU SRAM.",
+        userQuery: "How does FlashAttention optimize GPU memory?",
+      });
+
+      expect(result.answerText).toContain("FlashAttention reduces memory I/O by tiling computation");
+      expect(result.answerText).toContain("Based strictly on the provided context passages");
+    });
+
+    it("should audit and verify fact coverage and lexical groundedness calculations", () => {
+      const answer = "FlashAttention eliminates HBM memory bottlenecks by tiling matrix operations directly inside SRAM.";
+      const reference = "FlashAttention reduces memory I/O by tiling computation across SRAM.";
+      const context = "FlashAttention eliminates HBM memory bottlenecks by tiling matrix operations directly inside SRAM.";
+
+      const evalResult = BenchmarkEvaluator.evaluateAnswerQuality(
+        answer,
+        reference,
+        true,
+        ["flashattention", "tiling", "sram"],
+        context
+      );
+
+      // All 3 facts covered
+      expect(evalResult.factCoverage).toBe(1.0);
+      expect(evalResult.lexicalGroundednessScore).toBeDefined();
+      expect(evalResult.lexicalGroundednessScore).toBeGreaterThan(0.7);
+      expect(evalResult.lexicalGroundednessScore).toBe(evalResult.faithfulnessScore);
+    });
+
+    it("should support multi-token required facts matching", () => {
+      const answer = "The architecture uses grouped query attention and shared key value heads.";
+      const evalResult = BenchmarkEvaluator.evaluateAnswerQuality(
+        answer,
+        "It uses grouped query attention.",
+        true,
+        ["grouped query attention", "key value heads"]
+      );
+
+      expect(evalResult.factCoverage).toBe(1.0);
+    });
+
+    it("should include candidate chunk decisions in query benchmark results", async () => {
+      const mockCE = new CrossEncoderRerankingService(new MockCrossEncoderProvider());
+      const mockLayaService = new LayaRelevanceFilteringService(new MockLayaProvider());
+      const mockLLM = new MockLLMProvider();
+
+      const orchestrator = new RAGComparisonOrchestrator({
+        crossEncoderService: mockCE,
+        layaService: mockLayaService,
+        llmProvider: mockLLM,
+      });
+
+      const runner = new BenchmarkRunnerService(orchestrator);
+      const dataset = BenchmarkDatasetService.loadDataset();
+
+      const suiteResult = await runner.runBenchmark({
+        mode: "native",
+        caseIds: [dataset[0].id],
+      });
+
+      const queryResult = suiteResult.queryResults[0];
+      expect(queryResult.candidateDecisions).toBeDefined();
+      expect(queryResult.candidateDecisions!.length).toBe(dataset[0].candidateChunks.length);
+
+      const firstDecision = queryResult.candidateDecisions![0];
+      expect(firstDecision.id).toBeDefined();
+      expect(firstDecision.crossEncoder).toBeDefined();
+      expect(firstDecision.laya).toBeDefined();
+      expect(["keep", "drop"]).toContain(firstDecision.laya.decision);
+      expect(typeof firstDecision.isGroundTruthRelevant).toBe("boolean");
+    });
+
+    it("should export benchmark results to properly formatted CSV", async () => {
+      const mockCE = new CrossEncoderRerankingService(new MockCrossEncoderProvider());
+      const mockLayaService = new LayaRelevanceFilteringService(new MockLayaProvider());
+      const mockLLM = new MockLLMProvider();
+
+      const orchestrator = new RAGComparisonOrchestrator({
+        crossEncoderService: mockCE,
+        layaService: mockLayaService,
+        llmProvider: mockLLM,
+      });
+
+      const runner = new BenchmarkRunnerService(orchestrator);
+      const dataset = BenchmarkDatasetService.loadDataset();
+
+      const suiteResult = await runner.runBenchmark({
+        mode: "native",
+        caseIds: [dataset[0].id],
+      });
+
+      const csv = generateBenchmarkCsv(suiteResult);
+      expect(csv).toContain("QueryID,Category,Query,Answerable");
+      expect(csv).toContain("CE_F1,Laya_F1");
+      expect(csv).toContain("CE_LexicalGroundedness,Laya_LexicalGroundedness");
+      expect(csv).toContain(dataset[0].id);
     });
   });
 });

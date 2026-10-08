@@ -1,9 +1,9 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 6: Controlled Benchmark & Objective Evaluation**  
-> *Note: Phase 6 implements a comprehensive, version-controlled benchmark suite of 36 deterministic cases across 9 diverse retrieval categories. Evaluating Cross-Encoder reranking versus Laya binary relevance filtering under identical candidate pools and downstream LLM generation (`llama3.2:3b`), it independently reports relevance metrics (Precision, Recall, F1, Hit Rate), context efficiency, token footprints, component latencies, failure taxonomy, paired differences, and multi-dimensional Pareto tradeoffs without arbitrary winner scoring.*
+> **Phase 7: Research Dashboard, UX Simplification & Analysis Refinement**  
+> *Note: Phase 7 transforms PatternRAG Lab into an editorial research-grade dashboard inspired by Kaarya and Claude Code UI principles. Featuring a 3-tier information architecture (Interactive Lab, Benchmark Suite, Run History), a compact scientific protocol header, 3 conceptual metric groups (Relevance Quality, Context & Computational Efficiency, Downstream Answer Quality), side-by-side chunk-by-chunk decision diffs, CSV/JSON report exports, and rigorous fact coverage and lexical groundedness audits.*
 
-[![Phase 6](https://img.shields.io/badge/Status-Phase%206%20Objective%20Benchmark%20Suite-success.svg)](#current-phase-6-capabilities)
+[![Phase 7](https://img.shields.io/badge/Status-Phase%207%20Research%20Dashboard%20Refinement-success.svg)](#current-phase-7-capabilities)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
@@ -101,9 +101,29 @@ Detailed architectural diagrams and subsystem guides:
 
 ---
 
-## 4. Current Phase 6 Capabilities
+## 4. Current Phase 7 Capabilities
 
 PatternRAG Lab provides an end-to-end evaluation environment for post-retrieval relevance and downstream LLM generation:
+
+### Research Dashboard, UX Refinement & Analysis Audit (Phase 7)
+- **Restrained Editorial UI (Kaarya & Claude Code UI inspired)**:
+  - High-density, neutral surface styling with subtle borders, cobalt accents, monospace data typography, and zero visual clutter.
+- **3-Tier Information Architecture**:
+  - `[Interactive RAG Lab]`: Ingestion, vector retrieval, manual triggers, and live side-by-side generation.
+  - `[Controlled Benchmark Suite]`: 36-case objective benchmark execution, mode switching, metric groupings, Pareto tradeoffs, and query inspector.
+  - `[Run History & Results]`: Direct loading and inspection of persisted runs from `data/benchmark/results/*.json`.
+  - Compact horizontal Scientific Protocol summary row (`36 Queries · 9 Conditions · 2 Relevance Strategies · Shared Candidate Pool · Shared LLM`).
+- **3 Conceptual Metric Groups**:
+  - **Relevance Quality**: Precision, Recall, F1, Hit Rate, MRR / NDCG (ranking-only; N/A for unordered binary gating).
+  - **Context & Computational Efficiency**: Context Reduction %, Token Reduction %, Initial vs Retained Tokens, Latencies (Relevance, Generation, Total).
+  - **Downstream Answer Quality**: Fact Coverage, Lexical Groundedness (deterministic token overlap), Refusal Compliance, Reference Similarity.
+- **Side-by-Side Chunk Decision Inspector**:
+  - `QueryDetailModal` includes a dedicated chunk-level decision alignment table (`Chunk 01: CE [Selected] | Laya [KEEP] | GT [RELEVANT]`), highlighting agreements, false positives, and false negatives with text snippet preview.
+- **Run History & CSV/JSON Export**:
+  - `GET /api/benchmark/history` lists and serves historical runs.
+  - Direct one-click downloads for full JSON runs and spreadsheet CSV reports.
+- **Fact Coverage & Grounding Audit**:
+  - Enhanced `MockLLMProvider` with deterministic sentence grounding reflecting retained candidate chunks; updated `BenchmarkEvaluator` with multi-token fact coverage.
 
 ### Objective Benchmark Suite & Multi-Metric Evaluation (Phase 6)
 - **36 Deterministic Benchmark Cases**:
@@ -226,7 +246,7 @@ PatternRAG Lab applies six classical software design patterns:
 - **Phase 4**: Laya Relevance Evaluation (Done)
 - **Phase 5**: Same-LLM Controlled Cross-Encoder vs Laya Comparison (Done)
 - **Phase 6**: Controlled Benchmark & Objective Evaluation (Done)
-- **Phase 7**: Dashboard, Trace & History Refinement
+- **Phase 7**: Research Dashboard, UX Simplification & Analysis Refinement (Done)
 - **Phase 8**: Final Testing, Documentation & Demonstration
 
 Track the full roadmap in [`docs/PHASES.md`](docs/PHASES.md).

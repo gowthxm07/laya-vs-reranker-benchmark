@@ -143,12 +143,16 @@ The dataset contains 4 cases across each of the 9 categories (36 total cases):
 - `initialContextTokens`, `retainedContextTokens`, `tokenReductionPercent`.
 - *Note*: Character reduction and token reduction are kept strictly separate.
 
-### C. Answer Quality & Faithfulness Metrics
-1. **Exact Match**: Case- and punctuation-normalized identity check.
+### C. Answer Quality & Lexical Groundedness Metrics
+1. **Exact Match**: Case- and punctuation-normalized identity check against ground-truth reference answer.
 2. **Reference Answer Similarity**: Lexical Jaccard and Dice coefficient overlap ($0.0$ to $1.0$).
-3. **Fact / Keyword Coverage**: Proportion of case `requiredFacts` explicitly surfaced in the answer.
+3. **Fact / Keyword Coverage**: Proportion of case `requiredFacts` explicitly surfaced in the answer. Supports both direct phrase presence and multi-token decomposition.
 4. **No-Answer Compliance (`noAnswerCompliance`)**: For `answerable = false` cases, verifies whether the answer acknowledges lack of context (e.g. "cannot be determined", "insufficient evidence", "not mentioned in context") rather than hallucinating.
-5. **Deterministic Faithfulness Score**: Proportion of non-stopword content tokens in the answer that are verbatim grounded in the retained context passages.
+5. **Lexical Groundedness (`lexicalGroundednessScore`)**: Deterministic proportion of non-stopword content tokens in the answer that are verbatim present in the selected context passages. Avoids subjective or non-reproducible semantic score approximations.
+
+> [!NOTE]
+> **Phase 7 Metric Audit — Fact Coverage in Mock vs Live Mode**:
+> In Phase 6 testing, mock runs reported 22.68% Fact Coverage for both paths because `MockLLMProvider` generated uniform boilerplate text rather than extracting context passages. In Phase 7, `MockLLMProvider` was enhanced to synthesize sentences directly from retained candidate passages, allowing mock test runs to accurately reflect whether required domain facts were retained or dropped (e.g. 88.9% mean coverage across retaining paths). Live evaluation runs using local Ollama `llama3.2:3b` continue to produce natural language responses with full factual synthesis.
 
 ### D. Component Latency Instrumentation
 - `relevanceLatencyMs`: Cross-Encoder transformer inference vs Laya classification.

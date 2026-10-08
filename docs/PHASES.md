@@ -12,9 +12,9 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 | **Phase 2** | **Common Document Retrieval Foundation** | PDF/TXT/MD ingestion, page preservation, deterministic chunking, Ollama embeddings, local vector index, shared `CandidateChunkPool` | **Completed** |
 | **Phase 3** | **Advanced RAG / Cross-Encoder Relevance Evaluation** | Cross-Encoder model loading (`cross-encoder/ms-marco-MiniLM-L-6-v2`), persistent Python worker IPC, candidate re-scoring, Top-N selection, rank shift tracking | **Completed** |
 | **Phase 4** | **Laya Relevance Evaluation** | Laya adapter integration, `D:\laya` runtime validation, non-autoregressive System 1 decision heads, persistent worker IPC, KEEP/DROP gating, context reduction calculation | **Completed** |
-| **Phase 5** | **Shared Execution + Comparison Engine** | Downstream generation (Ollama `llama3.2:3b`), dual-pipeline orchestrator facade, side-by-side execution | Planned |
-| **Phase 6** | **Evaluation Metrics & Benchmark Suite** | Faithfulness scoring, context reduction rates, differential latency/token analysis, batch query suite | Planned |
-| **Phase 7** | **Dashboard, Trace & History Refinement** | Observer decision trace visualization, historical experiment storage, comparative analytics | Planned |
+| **Phase 5** | **Shared Execution + Comparison Engine** | Downstream generation (Ollama `llama3.2:3b`), dual-pipeline orchestrator facade, side-by-side execution | **Completed** |
+| **Phase 6** | **Evaluation Metrics & Benchmark Suite** | 36-case benchmark, multi-metric evaluation, Pareto tradeoff analysis, CLI runner | **Completed** |
+| **Phase 7** | **Dashboard, Trace & History Refinement** | Restrained Kaarya/Claude Code UI, 3-tier IA, metric audits, chunk-by-chunk inspector, run history & CSV/JSON export | **Completed** |
 | **Phase 8** | **Final Testing, Documentation & Demonstration** | End-to-end integration verification, comprehensive user guides, research benchmark reports | Planned |
 
 ---
@@ -130,9 +130,25 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 
 ---
 
-### Phase 7 — Dashboard, Trace & History Refinement (Planned)
-- Interactive decision trace timeline showing per-step latencies.
-- Historical experiment persistence and comparison browser.
+### Phase 7 — Dashboard, Trace & History Refinement (Completed)
+- [x] **Fact Coverage Metric Audit & Simulated Grounding**: Audited why mock runs reported 22.68% fact coverage; updated `MockLLMProvider` to synthesize sentences directly from retained candidate passages, allowing deterministic unit test runs to accurately measure whether required domain facts were retained or dropped (mean 88.9% on retaining paths). Verified live parity with local Ollama `llama3.2:3b`.
+- [x] **Terminology Audit**:
+  - Replaced ambiguous "faithfulness" with "Lexical Groundedness" (`lexicalGroundednessScore`: deterministic token overlap of non-stopwords with selected context passages).
+  - Clarified Cross-Encoder scores as ranking signals / logits (not calibrated probabilities).
+  - Clarified Laya relevance evaluation as binary gating (`KEEP` / `DROP`).
+  - Documented MRR / NDCG as non-applicable (`N/A`) for unordered binary gating sets.
+- [x] **Restrained Research Tool Design System**: Refined UI following Kaarya and Claude Code UI principles (subtle borders, neutral canvas, cobalt/blue accent identity, monospace metric typography, zero unnecessary cards or badges).
+- [x] **3-Tier Information Architecture**:
+  - `[Interactive RAG Lab]`: Document ingestion, candidate retrieval, manual reranking/filtering triggers, side-by-side answer generation workspace.
+  - `[Controlled Benchmark Suite]`: 36-case objective suite, mode switcher, 3 conceptual metric groups, Pareto analysis, paired differences, and per-query inspector.
+  - `[Run History & Results]`: Persisted JSON run browser loading historical results directly from `data/benchmark/results/*.json`.
+  - Added compact horizontal Scientific Protocol summary row (`36 Queries · 9 Conditions · 2 Relevance Strategies · Shared Candidate Pool · Shared LLM`).
+- [x] **3 Conceptual Metric Groups**: Relevance Quality, Context & Computational Efficiency, Downstream Answer Quality.
+- [x] **Side-by-Side Chunk Decision Inspector**: Implemented candidate chunk alignment table in `QueryDetailModal` displaying `Chunk 01: CE [Selected] | Laya [KEEP] | GT [RELEVANT]`, highlighting agreements, false positives, and false negatives with text snippet preview.
+- [x] **Persistence & Export Capabilities**:
+  - Created `GET /api/benchmark/history` listing saved runs and serving full runs by ID/filename.
+  - Built CSV and JSON download export utilities (`generateBenchmarkCsv`, `downloadFile`).
+- [x] **Regression Tests & Verification**: Added 5 new regression tests in `src/__tests__/benchmark.test.ts` (91/91 tests passing in Vitest, 0 TypeScript errors, 0 ESLint warnings, production build succeeding).
 
 ---
 

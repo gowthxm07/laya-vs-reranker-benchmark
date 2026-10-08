@@ -205,6 +205,15 @@ export class BenchmarkEvaluator {
         const normFact = this.normalizeText(fact);
         if (normAnswer.includes(normFact)) {
           coveredFacts++;
+        } else {
+          // Multi-token fact matching: all substantive tokens present in normalized answer
+          const factTokens = normFact.split(" ").filter((t) => t.length > 2);
+          if (
+            factTokens.length > 1 &&
+            factTokens.every((token) => normAnswer.includes(token))
+          ) {
+            coveredFacts++;
+          }
         }
       }
     }
@@ -237,9 +246,9 @@ export class BenchmarkEvaluator {
       noAnswerCompliance = hasRefusal;
     }
 
-    // 5. Deterministic Faithfulness / Groundedness
+    // 5. Deterministic Faithfulness / Lexical Groundedness
     // Proportion of meaningful content words in the answer that appear in the context
-    const faithfulnessScore = this.calculateFaithfulness(
+    const lexicalGroundedness = this.calculateFaithfulness(
       answer,
       selectedContextText
     );
@@ -249,7 +258,8 @@ export class BenchmarkEvaluator {
       referenceAnswerSimilarity: refSimilarity,
       factCoverage,
       noAnswerCompliance,
-      faithfulnessScore,
+      faithfulnessScore: lexicalGroundedness,
+      lexicalGroundednessScore: lexicalGroundedness,
     };
   }
 
