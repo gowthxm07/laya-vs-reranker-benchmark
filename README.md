@@ -1,9 +1,9 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 7: Research Dashboard, UX Simplification & Analysis Refinement**  
-> *Note: Phase 7 transforms PatternRAG Lab into an editorial research-grade dashboard inspired by Kaarya and Claude Code UI principles. Featuring a 3-tier information architecture (Interactive Lab, Benchmark Suite, Run History), a compact scientific protocol header, 3 conceptual metric groups (Relevance Quality, Context & Computational Efficiency, Downstream Answer Quality), side-by-side chunk-by-chunk decision diffs, CSV/JSON report exports, and rigorous fact coverage and lexical groundedness audits.*
+> **Phase 8: Finalization, Research Validation & Demo Preparation (COMPLETE)**  
+> *PatternRAG Lab is a research-grade evaluation platform benchmarking Non-Autoregressive Relevance Filtering (Laya) against Cross-Encoder Reranking under strict experimental controls. Fully verified with 36 evaluation cases across 9 categories, multi-attribute Pareto tradeoff analysis, live local hardware audits, final research report ([`docs/FINAL_RESULTS.md`](docs/FINAL_RESULTS.md)), and comprehensive presentation guide ([`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md)).*
 
-[![Phase 7](https://img.shields.io/badge/Status-Phase%207%20Research%20Dashboard%20Refinement-success.svg)](#current-phase-7-capabilities)
+[![Phase 8](https://img.shields.io/badge/Status-Phase%208%20Finalized%20%26%20Validated-success.svg)](#4-finalized-system-capabilities-phase-8)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
@@ -89,7 +89,9 @@ To ensure scientific validity, both paths evaluate the **exact same candidate ch
                         └───────────────────────┘
 ```
 
-Detailed architectural diagrams and subsystem guides:
+Detailed architectural diagrams, benchmark findings, and presentation guides:
+- [`docs/FINAL_RESULTS.md`](docs/FINAL_RESULTS.md) — **Comprehensive Research Benchmark Report**: empirical findings, Pareto trade-off formalization, category breakdowns & hardware runtime profiles
+- [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md) — **Complete Demonstration & Presentation Script**: 10-segment walkthrough, live UI demo, failure mode demonstrations & technical Q&A defense
 - [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — Objective evaluation methodology, metrics specification, 9 categories, paired differences & Pareto tradeoffs
 - [`docs/COMPARISON.md`](docs/COMPARISON.md) — Controlled same-LLM comparison, dual modes, prompt isolation, latency & token instrumentation
 - [`docs/LAYA.md`](docs/LAYA.md) — Laya non-autoregressive relevance filtering, worker IPC, and calibration
@@ -97,13 +99,19 @@ Detailed architectural diagrams and subsystem guides:
 - [`docs/RETRIEVAL.md`](docs/RETRIEVAL.md) — Document parsing, deterministic chunking & vector store
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — High-level system design & component diagrams
 - [`docs/DESIGN_PATTERNS.md`](docs/DESIGN_PATTERNS.md) — Software design patterns implementation catalogue
-- [`docs/PHASES.md`](docs/PHASES.md) — Progressive project milestone tracker
+- [`docs/PHASES.md`](docs/PHASES.md) — Progressive project milestone tracker (Phases 1–8 Completed)
 
 ---
 
-## 4. Current Phase 7 Capabilities
+## 4. Finalized System Capabilities (Phase 8)
 
 PatternRAG Lab provides an end-to-end evaluation environment for post-retrieval relevance and downstream LLM generation:
+
+### Final Research Validation & Demo Preparation (Phase 8)
+- **Empirical Research Findings Report (`docs/FINAL_RESULTS.md`)**: Full 36-case statistical audit across 9 categories, formalizing the multi-attribute Pareto tradeoffs between Cross-Encoder and Laya.
+- **Demonstration Script & Presentation Walkthrough (`docs/DEMO_GUIDE.md`)**: Complete 10-segment guide for presenting the laboratory to researchers and stakeholders.
+- **Hardware Profile & Execution Audits**: Documented local CPU execution realities (Cross-Encoder: 450–1,950 ms; Laya: 5.6–13.2 s; Ollama llama3.2:3b: 39–45 s) versus GPU scale.
+- **Frozen Architecture & Parity Assurance**: Enforced immutable candidate pool preservation, zero score leakage, identical generation prompts and parameters (`temperature=0`, `seed=42`).
 
 ### Research Dashboard, UX Refinement & Analysis Audit (Phase 7)
 - **Restrained Editorial UI (Kaarya & Claude Code UI inspired)**:

@@ -7,6 +7,9 @@
 - **Path A — Advanced RAG Baseline**: Joint cross-attention reranking via `cross-encoder/ms-marco-MiniLM-L-6-v2`.
 - **Path B — Laya RAG Strategy**: Non-autoregressive System 1 binary relevance gating via local `ModernBERT-large` (421M parameters, `D:\laya`).
 
+> **Empirical Findings Notice:**  
+> For the complete research report, empirical numbers, hardware runtime profiles, and Pareto tradeoff analysis from the 36-case benchmark run, see [`docs/FINAL_RESULTS.md`](FINAL_RESULTS.md). For the presentation walkthrough, see [`docs/DEMO_GUIDE.md`](DEMO_GUIDE.md).
+
 ### Core Scientific Research Principle
 > **Tradeoffs, Not Premature Winners**:  
 > No single arbitrary weighted "winner score" (e.g. $30\%\text{ accuracy} + 30\%\text{ latency} + 40\%\text{ context}$) is computed. A post-retrieval strategy may achieve higher recall while consuming more context, or execute with ultra-low latency while exhibiting conservative selection boundaries. This benchmark reports each metric independently, exposes multi-dimensional Pareto relationships, and preserves raw evaluation records.
