@@ -20,17 +20,17 @@ export function Badge({
     default:
       "bg-surface-elevated text-text-secondary border-border",
     accent:
-      "bg-accent-subtle text-blue-400 border-accent-border",
+      "bg-accent-subtle text-accent border-accent-border",
     outline:
       "bg-transparent text-text-secondary border-border",
     success:
-      "bg-emerald-950/40 text-emerald-400 border-emerald-800/60",
+      "bg-emerald-50 text-emerald-800 border-emerald-200",
     warning:
-      "bg-amber-950/40 text-amber-400 border-amber-800/60",
+      "bg-amber-50 text-amber-800 border-amber-200",
     muted:
-      "bg-canvas-subtle text-text-muted border-border/50",
+      "bg-surface-subtle text-text-muted border-border/70",
     danger:
-      "bg-red-950/40 text-red-400 border-red-800/60",
+      "bg-rose-50 text-rose-800 border-rose-200",
   };
 
   const sizes = {

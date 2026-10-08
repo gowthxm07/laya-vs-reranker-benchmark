@@ -3,63 +3,36 @@
 @tailwind utilities;
 
 :root {
-  /* Restrained neutral palette - default technical dark mode */
-  --bg-canvas: #090d16;
-  --bg-canvas-subtle: #0d131f;
-  --bg-surface: #111726;
-  --bg-surface-elevated: #161e31;
-  --bg-surface-subtle: #1a233a;
+  /* Warm minimal editorial light canvas */
+  --bg-canvas: #ffffff;
+  --bg-canvas-subtle: #fafaf9;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #fafaf9;
+  --bg-surface-subtle: #f5f5f4;
 
-  --border-subtle: #1e293b;
-  --border-strong: #334155;
-  --border-focus: #3b82f6;
+  --border-subtle: #e7e5e4;
+  --border-strong: #d6d3d1;
+  --border-focus: #a96845;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  --text-muted: #78716c;
 
-  --accent-primary: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-subtle: rgba(59, 130, 246, 0.12);
-  --accent-border: rgba(59, 130, 246, 0.35);
+  /* Restrained warm light brown accent */
+  --accent-primary: #a96845;
+  --accent-hover: #8f5435;
+  --accent-subtle: rgba(169, 104, 69, 0.08);
+  --accent-border: rgba(169, 104, 69, 0.25);
 
-  --status-idle: #64748b;
-  --status-running: #38bdf8;
-  --status-success: #10b981;
-  --status-warning: #f59e0b;
-  --status-error: #ef4444;
+  --status-idle: #78716c;
+  --status-running: #a96845;
+  --status-success: #15803d;
+  --status-warning: #b45309;
+  --status-error: #b91c1c;
 
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
-}
-
-/* Light mode overrides if ever enabled */
-.light {
-  --bg-canvas: #f8fafc;
-  --bg-canvas-subtle: #f1f5f9;
-  --bg-surface: #ffffff;
-  --bg-surface-elevated: #f8fafc;
-  --bg-surface-subtle: #f1f5f9;
-
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --border-focus: #2563eb;
-
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-
-  --accent-primary: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-subtle: rgba(37, 99, 235, 0.08);
-  --accent-border: rgba(37, 99, 235, 0.25);
-
-  --status-idle: #94a3b8;
-  --status-running: #0284c7;
-  --status-success: #059669;
-  --status-warning: #d97706;
-  --status-error: #dc2626;
 }
 
 body {

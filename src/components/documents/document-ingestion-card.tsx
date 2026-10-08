@@ -1,17 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Document } from "@/lib/types/document";
-import {
-  Upload,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 interface IngestionTimings {
   parseDurationMs: number;
@@ -75,7 +67,7 @@ export function DocumentIngestionCard({
   };
 
   const handleClear = async () => {
-    if (!confirm("Clear indexed documents from vector store?")) return;
+    if (!confirm("Clear indexed document from vector store?")) return;
     try {
       await fetch("/api/documents", { method: "DELETE" });
       setLastTimings(null);
@@ -85,34 +77,107 @@ export function DocumentIngestionCard({
     }
   };
 
-  return (
-    <Card className="bg-canvas-subtle border border-border rounded-lg shadow-panel">
-      <CardHeader className="p-4 border-b border-border/80 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Upload className="h-4 w-4 text-accent" />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-primary">
-            Document Ingestion & Vector Index
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="accent" size="sm" className="font-mono">
-            Embedding: nomic-embed-text
-          </Badge>
-          {totalChunks > 0 && (
-            <button
-              onClick={handleClear}
-              className="text-text-muted hover:text-status-error p-1 rounded transition-colors"
-              title="Clear vector store"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </CardHeader>
+  const isReady = !!indexedDoc || totalChunks > 0;
 
-      <CardContent className="p-4 space-y-3">
-        {/* Dropzone / Upload Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+  return (
+    <section className="space-y-3">
+      {/* Section Header */}
+      <div>
+        <h2 className="text-xs font-mono font-semibold tracking-wider text-accent uppercase">
+          01 — DOCUMENT
+        </h2>
+        <p className="text-sm text-text-secondary mt-1">
+          Upload the document you want to evaluate.
+        </p>
+      </div>
+
+      {error && (
+        <div className="p-3 rounded border border-status-error/30 bg-rose-50 text-xs text-rose-800 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-status-error" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-xs text-rose-600 hover:text-rose-900 underline shrink-0 font-mono"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {isReady ? (
+        /* Document Uploaded / Ready View */
+        <div className="border border-border rounded-lg p-5 bg-white space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-text-primary">
+                {indexedDoc?.filename || "demo_document.pdf"}
+              </div>
+              <div className="text-xs text-text-muted flex items-center gap-2">
+                {indexedDoc?.pageCount ? (
+                  <span>{indexedDoc.pageCount} pages</span>
+                ) : (
+                  <span>Document parsed</span>
+                )}
+                <span>·</span>
+                <span className="text-emerald-700 font-medium">Uploaded / Ready</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.md,.markdown"
+                onChange={handleFileChange}
+                className="hidden"
+                id="doc-upload-replace"
+                disabled={isUploading}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={isUploading}
+                isLoading={isUploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs"
+              >
+                Replace File
+              </Button>
+              {onClearIndex && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClear}
+                  disabled={isUploading}
+                  className="text-xs text-text-muted hover:text-status-error hover:border-status-error/50"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Unobtrusive Technical Details */}
+          <details className="text-xs text-text-muted pt-2 border-t border-border/60">
+            <summary className="cursor-pointer hover:text-text-primary select-none font-mono text-[11px]">
+              Technical details
+            </summary>
+            <div className="mt-2 space-y-1 font-mono text-[11px] text-text-secondary pl-2">
+              <div>Total Indexed Chunks: {totalChunks}</div>
+              {indexedDoc && <div>Document ID: {indexedDoc.id}</div>}
+              {lastTimings && (
+                <div>
+                  Ingestion Latency: {lastTimings.totalDurationMs}ms (Parse: {lastTimings.parseDurationMs}ms, Chunk: {lastTimings.chunkDurationMs}ms, Embed: {lastTimings.embeddingDurationMs}ms)
+                </div>
+              )}
+            </div>
+          </details>
+        </div>
+      ) : (
+        /* Empty Upload Dropzone View */
+        <div className="border border-dashed border-border rounded-lg p-10 bg-white hover:bg-surface-elevated/40 text-center transition-colors">
           <input
             ref={fileInputRef}
             type="file"
@@ -122,92 +187,32 @@ export function DocumentIngestionCard({
             id="doc-upload-input"
             disabled={isUploading}
           />
-          <label
-            htmlFor="doc-upload-input"
-            className={`flex-1 flex items-center justify-center gap-2.5 p-3 rounded border border-dashed border-border/90 bg-surface/50 hover:bg-surface-elevated/70 text-xs text-text-secondary hover:text-text-primary cursor-pointer transition-colors ${
-              isUploading ? "opacity-50 pointer-events-none" : ""
-            }`}
-          >
-            <Upload className="h-4 w-4 text-accent shrink-0" />
-            <span>
-              {isUploading
-                ? "Parsing, chunking & embedding document..."
-                : "Drop or select PDF, TXT, or Markdown document"}
-            </span>
-          </label>
-
-          <Button
-            variant="secondary"
-            size="md"
-            disabled={isUploading}
-            isLoading={isUploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="text-xs shrink-0"
-          >
-            Choose File
-          </Button>
-        </div>
-
-        {error && (
-          <div className="p-2.5 rounded border border-status-error/40 bg-status-error/10 text-xs text-rose-300 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Current Document Status Card */}
-        {indexedDoc ? (
-          <div className="p-3 rounded border border-border/80 bg-surface-elevated/40 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded bg-emerald-950/50 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
-                <FileText className="h-3.5 w-3.5" />
+          <div className="max-w-xs mx-auto space-y-3">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-text-primary">
+                {isUploading
+                  ? "Parsing, chunking & embedding document..."
+                  : "Upload your document"}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-text-primary">
-                    {indexedDoc.filename}
-                  </span>
-                  <Badge variant="success" size="sm" className="gap-1">
-                    <CheckCircle2 className="h-2.5 w-2.5" /> Indexed
-                  </Badge>
-                </div>
-                <div className="text-[11px] text-text-muted mt-0.5 font-mono flex items-center gap-2">
-                  <span>{(indexedDoc.size / 1024).toFixed(1)} KB</span>
-                  {indexedDoc.pageCount && (
-                    <>
-                      <span>•</span>
-                      <span>{indexedDoc.pageCount} page(s)</span>
-                    </>
-                  )}
-                  <span>•</span>
-                  <span>{totalChunks} chunks in index</span>
-                </div>
+              <div className="text-xs text-text-muted">
+                PDF, TXT or Markdown
               </div>
             </div>
-
-            {lastTimings && (
-              <div className="flex items-center gap-3 text-[10px] font-mono text-text-muted border-t sm:border-t-0 sm:border-l border-border/60 pt-2 sm:pt-0 sm:pl-3">
-                <div title="Parse timing">
-                  Parse: <span className="text-text-secondary">{lastTimings.parseDurationMs}ms</span>
-                </div>
-                <div title="Chunk timing">
-                  Chunk: <span className="text-text-secondary">{lastTimings.chunkDurationMs}ms</span>
-                </div>
-                <div title="Embedding timing">
-                  Embed: <span className="text-text-secondary">{lastTimings.embeddingDurationMs}ms</span>
-                </div>
-                <div title="Total ingestion timing">
-                  Total: <strong className="text-text-primary">{lastTimings.totalDurationMs}ms</strong>
-                </div>
-              </div>
-            )}
+            <div>
+              <Button
+                variant="secondary"
+                size="md"
+                disabled={isUploading}
+                isLoading={isUploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs"
+              >
+                Choose File
+              </Button>
+            </div>
           </div>
-        ) : (
-          <p className="text-[11px] text-text-muted">
-            No document uploaded yet. You can upload custom PDF/TXT/MD files above, or search the pre-indexed baseline collections below.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </section>
   );
 }

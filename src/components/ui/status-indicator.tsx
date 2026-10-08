@@ -22,13 +22,13 @@ export function StatusIndicator({
       defaultLabel: "Not run yet",
     },
     ready: {
-      color: "bg-blue-400",
-      ring: "ring-blue-400/20",
+      color: "bg-accent",
+      ring: "ring-accent/20",
       defaultLabel: "Ready",
     },
     running: {
       color: "bg-status-running animate-pulse",
-      ring: "ring-sky-400/30",
+      ring: "ring-accent/30",
       defaultLabel: "Executing...",
     },
     completed: {
