@@ -125,7 +125,7 @@ Listens to pipeline lifecycle events without polluting core evaluation routines.
 - **Objective Multi-Metric Evaluation**:
   - Relevance Selection: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).
   - Context & Token Efficiency: Candidate reduction %, Character reduction %, Token reduction %, Token footprint.
-  - Answer Quality: Exact Match, Reference Answer Similarity, Fact Coverage, No-Answer Refusal Compliance, Deterministic Faithfulness.
+  - Answer Quality: Exact Match, Reference Answer Similarity, Fact Coverage, No-Answer Refusal Compliance, Deterministic Lexical Groundedness.
   - Latency: Component-level decomposition (relevance, context build, LLM generation, total).
 - **Multi-Dimensional Pareto Tradeoff Analysis**: Evaluates dominance across 5 objective axes rather than calculating arbitrary weighted winner scores.
 - **Paired Differential Statistics**: Computes query-by-query difference ($CE - Laya$), reporting superior counts and ties.

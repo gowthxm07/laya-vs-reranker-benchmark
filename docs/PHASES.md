@@ -116,7 +116,7 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 - [x] Implemented `BenchmarkEvaluator` calculating:
   - Relevance metrics: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).
   - Context efficiency: Context Reduction %, Character Reduction %, Token Reduction %, Retention Rate.
-  - Answer quality & faithfulness: Exact Match, Reference Answer Similarity, Fact Coverage, No-Answer Compliance, Deterministic Faithfulness.
+  - Answer quality & groundedness: Exact Match, Reference Answer Similarity, Fact Coverage, No-Answer Compliance, Deterministic Lexical Groundedness.
   - Multi-attribute Pareto tradeoff analysis (evaluating dominance across 5 dimensions without arbitrary winner scoring).
   - Paired difference statistics (query-by-query differential, CE superior, Laya superior, ties).
   - Failure classification taxonomy (`BOTH_CORRECT`, `BOTH_INCORRECT`, `CROSS_ENCODER_FALSE_POSITIVE`, `LAYA_FALSE_NEGATIVE`, etc.).
@@ -162,7 +162,7 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
   - Demonstrated that 36 of 36 cases exhibit multi-attribute Pareto tradeoffs across 5 dimensions (Relevance F1, Fact Coverage, Context Reduction %, Relevance Latency, Total Latency).
   - Cross-Encoder dominates on 0 cases; Laya dominates on 0 cases.
   - Cross-Encoder secures maximum recall (0.9792) and ranking resolution.
-  - Laya secures precision gating (1.0000), 72.50% context reduction, and 44.9% prompt token savings with identical downstream fact coverage (0.6528).
+  - Laya secures precision gating (1.0000), 72.50% context reduction, and 44.9% prompt token savings while achieving the same mean Downstream Fact Coverage score in this benchmark (0.6528).
 - [x] **Research Benchmark Report:** Published comprehensive findings in `docs/FINAL_RESULTS.md` documenting experimental setup, mathematical metric formulations, Native vs Budget comparisons, category breakdowns, hardware runtime realities, failure taxonomy, and strategic trade-off matrix.
 - [x] **Demonstration & Presentation Guide:** Published comprehensive 10-segment walkthrough in `docs/DEMO_GUIDE.md` covering problem formulation, architectural controls, interactive lab walkthrough, benchmark suite analysis, side-by-side chunk alignment inspection, edge-case failure demonstrations, CLI reproducibility, and technical Q&A defense.
 - [x] **Automated Quality Gates:** Verified 91/91 unit and regression tests passing in Vitest, 0 TypeScript compile errors, 0 ESLint warnings, and successful Next.js production build.

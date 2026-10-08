@@ -22,13 +22,13 @@ An alternative paradigm—**Laya Relevance Filtering**—employs non-autoregress
 1. **Multi-Dimensional Pareto Tradeoff (36 of 36 Cases):**  
    Neither strategy strictly dominates across all evaluation axes. Cross-Encoder and Laya exhibit multi-attribute Pareto optimality:
    - **Cross-Encoder** prioritizes **maximum recall** (0.9792 mean recall) and **ranking resolution** (continuous logits enabling Top-$K$ cutoff), at the expense of **context bloat** (only 4.17% context reduction; 403.8 mean prompt tokens) and lower relevance precision (0.3264).
-   - **Laya** prioritizes **precision gating** (1.0000 mean precision) and **aggressive context pruning** (72.50% context reduction; 222.6 mean prompt tokens), reducing prompt token volume by **44.9%** while preserving identical downstream fact coverage (0.6528 mean).
+   - **Laya** prioritizes **precision gating** (1.0000 mean precision) and **aggressive context pruning** (72.50% context reduction; 222.6 mean prompt tokens), reducing prompt token volume by **44.9%** while achieving the same mean Downstream Fact Coverage score in this benchmark (0.6528).
 2. **Context-Budget Parity:**  
    When both pipelines are constrained to an identical chunk budget ($K=3$), the precision gap narrows (CE: 0.4167 vs. Laya: 1.0000), while CE recall drops to 0.9051. Laya's binary filter naturally remains within the budget without needing forced truncation.
 3. **Graceful Handling of Unanswerable Queries (`NO_ANSWER`):**  
-   In queries where the corpus contains no relevant evidence, Laya achieves **100% context reduction** (0 passages forwarded to the LLM), triggering the explicit insufficient-evidence generation policy. Conversely, Cross-Encoder forwards all 5 candidate distractors to the LLM, creating hallucination risk.
+   In queries where the corpus contains no relevant evidence, Laya achieves **100% context reduction** (0 passages forwarded to the LLM), triggering the explicit insufficient-evidence generation policy. Conversely, Cross-Encoder forwards all 5 candidate distractors to the LLM, increasing exposure to irrelevant context.
 4. **Computational Latency Tradeoffs:**  
-   On CPU execution environments, model parameter scale dictates inference time. The lightweight Cross-Encoder (22M parameters) executes in 450–1,950 ms, whereas the 395M-parameter ModernBERT-large backbone in Laya requires 5.6–13.2 s on CPU. However, Laya's 45% context token pruning provides substantial decode-time savings when consuming remote LLM APIs.
+   On CPU execution environments, model parameter scale dictates inference time. The lightweight Cross-Encoder (22M parameters) executes in 450–1,950 ms, whereas the 395M-parameter ModernBERT-large backbone in Laya requires 5.6–13.2 s on CPU. Context reduction may be beneficial in deployments where downstream LLM inference or token cost is significant.
 
 ---
 
@@ -154,13 +154,13 @@ To prevent confounding variables and experimental bias, both strategies were exe
 - **Token Reduction Percentage:**
   $$\text{Token Reduction \%} = \left(1 - \frac{T_{\text{prompt}}}{T_{\text{candidate\_raw}}}\right) \times 100\%$$
 
-### 6.3 Downstream Answer Quality & Faithfulness
+### 6.3 Downstream Answer Quality & Lexical Groundedness
 - **Ground Truth Fact Coverage:**
   $$\text{Fact Coverage} = \frac{|\{f \in \mathcal{F}_{\text{GT}} : f \text{ is matched in answer}\}|}{|\mathcal{F}_{\text{GT}}|}$$
 - **Lexical Groundedness Score:**
-  Deterministic token overlap of non-stopword tokens in the generated answer against the text of retained context passages:
+  Lexical Groundedness measures the proportion of non-stopword answer content tokens that appear in the retained context:
   $$\text{Lexical Groundedness} = \frac{|\mathcal{T}_{\text{answer\_content}} \cap \mathcal{T}_{\text{retained\_context}}|}{|\mathcal{T}_{\text{answer\_content}}|}$$
-  *(Audit Clarification: This metric measures literal lexical grounding; it is not a semantic proof of contextual entailment).*
+  It is a deterministic lexical overlap measure and is not a substitute for semantic faithfulness evaluation.
 
 ---
 
@@ -179,7 +179,7 @@ In **Native Mode**, each strategy operates according to its default architectura
 | **Context Reduction %** | **4.17%** | 0.00% | 11.79% | **72.50%** | 75.00% | 14.84% | **Laya +68.3%** |
 | **Prompt Tokens** | **403.8** | 400.5 | 34.68 | **222.6** | 208.5 | 45.07 | **Laya saves 181.2 tokens** |
 | **Total Tokens** | **490.4** | 495.0 | 36.38 | **293.0** | 287.0 | 64.32 | **Laya saves 197.4 tokens** |
-| **Fact Coverage** | **0.6528** | 0.6667 | 0.3405 | **0.6528** | 0.6667 | 0.3354 | **Identical (Parity)** |
+| **Fact Coverage** | **0.6528** | 0.6667 | 0.3405 | **0.6528** | 0.6667 | 0.3354 | **Same Mean Score (0.6528)** |
 | **Lexical Groundedness**| **0.9038** | 0.9063 | 0.0230 | **0.7890** | 0.8909 | 0.2815 | **CE +11.5%** *(Note 1)* |
 | **MRR** | **0.9583** | 1.0000 | 0.1414 | **N/A** | N/A | N/A | Ranking Only |
 | **NDCG@5** | **0.9632** | 1.0000 | 0.1245 | **N/A** | N/A | N/A | Ranking Only |
@@ -203,7 +203,7 @@ In **Context-Budget Mode**, both strategies are restricted to a maximum context 
 | **Context Reduction %** | **33.33%** | **72.50%** | CE forced to 33.33% reduction; Laya retains natural 72.50% reduction. |
 | **Prompt Tokens** | **322.9** | **222.6** | CE prompt tokens drop from 403.8 to 322.9; Laya remains 222.6. |
 | **Total Tokens** | **409.5** | **293.0** | Laya maintains a 116.5 token advantage over CE. |
-| **Fact Coverage** | **0.6528** | **0.6528** | Downstream fact coverage remains identical between both pipelines. |
+| **Fact Coverage** | **0.6528** | **0.6528** | Both strategies achieved the same mean Downstream Fact Coverage score in this benchmark. |
 
 ---
 
@@ -225,7 +225,7 @@ Analyzing the 9 benchmark categories reveals where each architectural paradigm e
 
 ### Key Categorical Observations:
 1. **`NO_ANSWER` Queries:**  
-   Laya correctly drops 100% of candidate chunks (Context Reduction: 100%), passing zero tokens to the LLM and causing the generator to output an explicit "insufficient context" message. Cross-Encoder blindly fills its Top-5 buffer with irrelevant distractors, consuming 447 tokens and exposing the model to hallucination.
+   Laya correctly drops 100% of candidate chunks (Context Reduction: 100%), passing zero tokens to the LLM and causing the generator to output an explicit "insufficient context" message. Cross-Encoder blindly fills its Top-5 buffer with irrelevant distractors, consuming 447 tokens and increasing exposure to irrelevant context.
 2. **`DISTRACTOR_HEAVY` & `SINGLE_RELEVANT`:**  
    When only 1 relevant passage exists among 4–5 distractors, Cross-Encoder forces Top-5 retention, pulling 4 distractors into context (Precision: 0.200). Laya prunes 80% of candidates, retaining solely the relevant passage (Precision: 1.000, F1: 1.000, 271 tokens).
 3. **`LONG_CONTEXT` & `MULTI_CHUNK`:**  
@@ -254,12 +254,9 @@ Analyzing the 9 benchmark categories reveals where each architectural paradigm e
 ### 10.2 Architectural Latency Drivers
 1. **Model Parameter Scale:**  
    `cross-encoder/ms-marco-MiniLM-L-6-v2` has **22 million parameters**, allowing fast sequential forward passes even on CPU.  
-   Laya's `ModernBERT-large` backbone contains **~395 million parameters** (18x larger). On CPU without vectorized AVX-512 tensor parallel acceleration, evaluating 4–8 candidate pairs requires 5–13 seconds.
-2. **Inference Latency vs. Token Transmission Costs:**  
-   While Cross-Encoder has lower local scoring latency on CPU, Laya reduces context tokens by **45%**. In cloud architectures where LLMs are accessed via external APIs (e.g., GPT-4o, Claude 3.5), reducing prompt length from 404 to 223 tokens yields:
-   - Faster Time-to-First-Token (TTFT).
-   - Decreased network ingress latency.
-   - Significant dollar cost savings on token billing.
+   Laya's `ModernBERT-large` backbone contains **~395 million parameters** (18x larger). On CPU without vectorized AVX-512 tensor parallel acceleration, evaluating 4–8 candidate pairs requires 5–13 seconds. Laya incurred substantially higher relevance-evaluation latency than the local Cross-Encoder CPU baseline in the measured environment.
+2. **Context Reduction & Input Token Economy:**  
+   While Cross-Encoder has lower local scoring latency on CPU, Laya reduces context tokens by **45%** (reducing prompt length from 404 to 223 tokens on average). Context reduction may be beneficial in deployments where downstream LLM inference or token cost is significant.
 
 ---
 
@@ -279,7 +276,7 @@ A query-by-query paired analysis across all 36 evaluation cases:
 - **Precision:** Laya was superior on **36 out of 36 queries** (100% win rate).
 - **Recall:** Cross-Encoder was superior on **5 queries** (and tied on 31 queries).
 - **Context Reduction:** Laya was superior on **36 out of 36 queries** (100% win rate).
-- **Fact Coverage:** Both pipelines achieved identical fact coverage on **31 queries**, CE was superior on 2, and Laya was superior on 3.
+- **Fact Coverage:** Both strategies achieved the same Downstream Fact Coverage score on **31 queries**, CE was superior on 2, and Laya was superior on 3.
 
 ---
 
@@ -299,7 +296,7 @@ The benchmark evaluator tested for Pareto dominance across five independent dime
 
 > [!NOTE]
 > **Definitive Conclusion:**  
-> Neither strategy is universally superior. A system designer cannot pick one strategy that is faster, higher recall, higher precision, and more token-efficient simultaneously. The choice between Cross-Encoder reranking and Laya relevance filtering is a fundamental engineering tradeoff.
+> Neither strategy is universally superior. Cross-Encoder optimizes for lower relevance-evaluation latency in the measured CPU environment, continuous ranking resolution, and higher recall in the benchmark. Laya optimizes for binary relevance gating, substantially higher precision in this benchmark, greater context reduction, lower prompt-token volume, and strong pruning behavior on unanswerable cases.
 
 ---
 
@@ -310,7 +307,7 @@ Analyzing discrepancies between the two strategies identified four key failure m
 ### Failure Mode 1: Distractor Leakage (Cross-Encoder Fixed-Top-N)
 - **Occurrence:** High in `DISTRACTOR_HEAVY` and `SINGLE_RELEVANT` queries.
 - **Cause:** When a candidate pool contains 1 relevant chunk and 4 distractors, Cross-Encoder's Top-5 truncation policy cannot discard the distractors.
-- **Consequence:** 4 irrelevant passages are passed into the prompt, diluting context and risking hallucination.
+- **Consequence:** 4 irrelevant passages are passed into the prompt, diluting context and increasing exposure to irrelevant context.
 
 ### Failure Mode 2: Premature Gating / False Negatives (Laya Binary Cutoff)
 - **Occurrence:** Observed in `LONG_CONTEXT` (e.g., `bench-long-01`, `bench-long-03`).
@@ -320,9 +317,9 @@ Analyzing discrepancies between the two strategies identified four key failure m
 ### Failure Mode 3: Conflicting Context Retention
 - **Occurrence:** `CONFLICTING_CONTEXT` category.
 - **Cross-Encoder Behavior:** Retains both contradictory passages in Top-5, forcing the downstream LLM to arbitrate the contradiction.
-- **Laya Behavior:** Retains both contradictory passages if both discuss the query topic, resulting in identical downstream fact coverage.
+- **Laya Behavior:** Retains both contradictory passages if both discuss the query topic, resulting in the same Downstream Fact Coverage score on these queries.
 
-### Failure Mode 4: Unanswerable Hallucination Induction
+### Failure Mode 4: Unanswerable Distractor Forwarding
 - **Occurrence:** `NO_ANSWER` category.
 - **Cross-Encoder Behavior:** Fails to recognize that no passage is relevant; delivers 5 irrelevant passages to the LLM.
 - **Laya Behavior:** Correctly predicts `drop` for all candidates, producing an empty context pool and safely triggering the refusal response.
@@ -338,12 +335,12 @@ Analyzing discrepancies between the two strategies identified four key failure m
 | System Requirement                    | Recommended Strategy | Rationale           |
 +---------------------------------------+----------------------+---------------------+
 | Strict Token / Cost Budget            | Laya Filtering       | 45% token pruning   |
-| High Risk of Hallucination            | Laya Filtering       | Drops distractors   |
+| High Distractor Density / Unanswerable| Laya Filtering       | Aggressive pruning  |
 | Frequent Unanswerable Queries         | Laya Filtering       | 100% prune on no-ans|
 | Fixed Top-K Rank Requirement          | Cross-Encoder        | Continuous logits   |
-| Complex Multi-Hop Synthesis           | Cross-Encoder        | Maximum recall      |
+| Complex Multi-Hop Synthesis           | Cross-Encoder        | Higher recall       |
 | Low-Resource CPU Deployment           | Cross-Encoder        | 22M param footprint |
-| High-Throughput GPU Cluster           | Laya Filtering       | Batched System 1    |
+| Binary Precision Gating               | Laya Filtering       | Eliminates noise    |
 +------------------------------------------------------------------------------------+
 ```
 
@@ -351,12 +348,12 @@ Analyzing discrepancies between the two strategies identified four key failure m
 
 ## 15. Threats to Validity & Study Limitations
 
-1. **Local CPU Hardware Constraint:**  
-   Latency measurements were recorded on an x86_64 host without GPU acceleration. In production GPU environments (e.g., NVIDIA H100/A10G with FlashAttention), ModernBERT inference latency drops to ~10–25 ms, substantially altering the latency calculus.
-2. **Local Model Scale:**  
-   The downstream generation LLM was `llama3.2:3b`. While representative of modern edge/local models, frontier models (GPT-4o, Claude 3.5 Sonnet) may exhibit higher tolerance for distractor passages.
+1. **Hardware Measurement Scope:**  
+   Latency measurements were recorded on an x86_64 host without GPU acceleration. Laya uses a ModernBERT-large model and incurred substantially higher relevance-evaluation latency than the local Cross-Encoder CPU baseline in the measured environment. GPU acceleration may reduce Laya inference latency, but GPU performance was not measured in this study.
+2. **Downstream Generation Scope:**  
+   The downstream generation LLM was the locally configured Ollama `llama3.2:3b`. Remote or larger LLMs were not directly benchmarked in this study; context reduction benefits in external API deployments remain hypothetical.
 3. **Deterministic Grounding Metric:**  
-   Lexical groundedness measures literal non-stopword token overlap, which does not detect semantic paraphrasing or complex logical entailment.
+   Lexical groundedness measures literal non-stopword token overlap, which is a deterministic lexical measure and is not a substitute for semantic faithfulness evaluation.
 4. **Dataset Scope:**  
    The dataset comprises 36 carefully curated queries across 9 categories. While statistically valid and covering key edge cases, large-scale enterprise deployments should evaluate across thousands of domain-specific documents.
 

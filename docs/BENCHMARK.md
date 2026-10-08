@@ -111,7 +111,7 @@ The dataset contains 4 cases across each of the 9 categories (36 total cases):
 | `MULTI_CHUNK` | Queries requiring synthesis of distinct passages (e.g. BERT MLM + NSP, 2PL Growing + Shrinking). | Multi-passage recall without premature pruning. |
 | `AMBIGUOUS` | Queries with overlapping valid interpretations (e.g., causal vs MLM masking). | Balanced retention of valid semantic interpretations. |
 | `PARTIAL_CONTEXT` | Queries where only a subset of required facts are present in the collection. | Accurately answering available facts while stating missing attributes. |
-| `NO_ANSWER` | Intentional unanswerable queries where candidate passages contain zero relevant evidence. | Refusal compliance (`noAnswerCompliance`) and hallucination resistance. |
+| `NO_ANSWER` | Intentional unanswerable queries where candidate passages contain zero relevant evidence. | Refusal compliance (`noAnswerCompliance`) and aggressive context pruning for unanswerable queries. |
 | `SINGLE_RELEVANT` | Exactly 1 highly specific target passage among general background text. | Precision and aggressive noise elimination. |
 | `CONFLICTING_CONTEXT` | Candidate passages containing contradictory claims (e.g. ancient Rome population estimates). | Reporting conflicting evidence without arbitrary bias. |
 | `LONG_CONTEXT` | 8 candidate passages (larger candidate pool) with multiple relevant elements. | Scalability and selectivity across higher token budgets. |
@@ -253,7 +253,7 @@ Raw output files are saved to `data/benchmark/results/benchmark-run-<timestamp>.
 
 1. **CPU Execution Speed**:
    Running 36 cases with local `llama3.2:3b` generation takes ~30–35s per LLM call on a laptop CPU. In development and testing, mock providers allow instantaneous deterministic verification in under 300ms.
-2. **Lexical Faithfulness vs Syntactic Variation**:
-   The deterministic faithfulness metric measures content word presence in context; complex paraphrasing or domain synonym substitution may score slightly lower without manual human review.
+2. **Lexical Groundedness vs Semantic Entailment**:
+   Lexical Groundedness measures the proportion of non-stopword answer content tokens that appear in the retained context. It is a deterministic lexical overlap measure and is not a substitute for semantic faithfulness evaluation.
 3. **Laya Warm-Up**:
    Laya's PyTorch worker takes ~24s for cold-start weight loading, after which inference runs in batch mode.

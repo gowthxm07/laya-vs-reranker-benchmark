@@ -29,7 +29,7 @@ This guide provides a structured, step-by-step script for demonstrating **Patter
 > *However, this default has major blind spots:  
 > 1. What if only 1 chunk was actually relevant? You just passed 4 distractors into the prompt.  
 > 2. What if the query was unanswerable? Top-K forces the 5 least-irrelevant distractors into context, practically begging the LLM to hallucinate.  
-> 3. What if you're paying per token for GPT-4o or Claude 3.5? You're burning budget on noise.*  
+> 3. What if downstream LLM inference or token cost is significant? You're burning budget on noise.*  
 > 
 > *PatternRAG Lab tests a different paradigm: **Laya Non-Autoregressive Relevance Filtering**. Instead of ranking and slicing Top-K, Laya uses a specialized bidirectional classification head (ModernBERT) to make calibrated binary $\text{KEEP} / \text{DROP}$ gating decisions on each chunk independently.  
 > 
@@ -112,13 +112,13 @@ Point to the KPI cards:
 - **Prompt Token Savings:** Laya averages **222.6 tokens** per prompt vs. Cross-Encoder **403.8 tokens**—a **44.9% token volume reduction**.
 
 #### Tier 3: Downstream Answer Quality
-- **Fact Coverage:** Both pipelines achieve identical mean fact coverage (**0.6528**), proving that Laya's aggressive context pruning does not degrade factual completeness.
-- **Lexical Groundedness:** Deterministic non-stopword overlap with selected context passages.
+- **Fact Coverage:** Both strategies achieved the same mean Downstream Fact Coverage score (**0.6528**) in this benchmark, demonstrating that context reduction did not reduce this metric.
+- **Lexical Groundedness:** Measures the proportion of non-stopword answer content tokens that appear in the retained context. It is a deterministic lexical overlap measure and is not a substitute for semantic faithfulness evaluation.
 
 #### Tier 4: Multi-Attribute Pareto Analysis Card
 Point out the Pareto card:
 > *"Notice the badge: **36 of 36 Cases Exhibit Multi-Attribute Pareto Tradeoffs**.  
-> Neither strategy dominates the other across all dimensions. If you want maximum recall and ranking cutoff, you pick Cross-Encoder. If you want precision, aggressive token savings, and hallucination protection, you pick Laya."*
+> Neither strategy dominates the other across all dimensions. If you want maximum recall and ranking cutoff, you pick Cross-Encoder. If you want precision, aggressive token savings, and hallucination-risk reduction through context filtering, you pick Laya."*
 
 ---
 
@@ -157,9 +157,9 @@ Point out the Pareto card:
 Summarize the key takeaways from `docs/FINAL_RESULTS.md`:
 
 1. **Context Economy:**  
-   Laya eliminates an average of **181 prompt tokens per query** (44.9% savings). In high-volume production systems, this translates directly to a ~45% reduction in LLM inference costs and lower Time-to-First-Token.
-2. **Fact Completeness Parity:**  
-   Despite dropping 72.5% of context passages, Laya achieved identical fact coverage to Cross-Encoder (0.6528 mean). The pruned passages were predominantly noise.
+   Laya eliminates an average of **181 prompt tokens per query** (44.9% savings). In production systems where token volume matters, this translates directly to reduced prompt length and lower token transmission costs.
+2. **Downstream Fact Coverage Parity:**  
+   Despite dropping 72.5% of context passages, both strategies achieved the same mean Downstream Fact Coverage score in this benchmark (0.6528).
 3. **The Recall Tradeoff:**  
    In complex queries with 8 candidate passages (`LONG_CONTEXT`), Cross-Encoder had higher recall (0.813 vs. 0.542). Laya's binary threshold can be overly aggressive on subtle supporting evidence.
 4. **Ranking vs. Filtering:**  
@@ -218,15 +218,30 @@ Show the generated terminal summary table displaying:
 
 ### Objection 3: *"Isn't Laya just a binary classifier? Why not use an LLM prompt as a filter?"*
 > **Answer:**  
-> Prompting an autoregressive LLM (e.g. GPT-4o-mini) to evaluate 10 passages requires generating autoregressive text tokens, suffering from sequential decoding latency, high API costs, and prompt format drift. Laya uses a **non-autoregressive bidirectional encoder** (ModernBERT), making instant forward-pass decisions across all candidate chunks in a single batch pass.
+> Prompting an autoregressive LLM to evaluate candidate passages requires generating autoregressive text tokens, suffering from sequential decoding latency, higher token costs, and prompt format drift. Laya uses a **non-autoregressive bidirectional encoder** (ModernBERT), making instant forward-pass decisions across all candidate chunks in a single batch pass.
 
 ### Objection 4: *"Why was Laya slower than Cross-Encoder on CPU in the live run?"*
 > **Answer:**  
-> That is a function of parameter scale: `MiniLM-L-6-v2` has **22 million parameters**, while Laya's `ModernBERT-large` has **395 million parameters** (18x larger). On CPU without GPU acceleration, ModernBERT takes ~5–13 seconds to compute. In a production GPU environment (NVIDIA A10G/H100), ModernBERT batch inference takes under 30 ms, while still delivering 45% prompt token reductions to the downstream LLM.
+> That is a function of parameter scale: `MiniLM-L-6-v2` has **22 million parameters**, while Laya's `ModernBERT-large` has **395 million parameters** (18x larger). In the measured local CPU environment, Laya incurred substantially higher relevance-evaluation latency (~5–13 seconds). GPU acceleration may reduce Laya inference latency, but GPU performance was not measured in this study.
 
 ---
 
-## 11. Segment 10: Setup, Deployment & Local Prerequisites
+## 11. Segment 10: Setup, Deployment & Demo Document Testing
+
+### Demo Document: `demo_document.pdf`
+A realistic 7-page company policy handbook (`Acme Technologies — Employee Rules & Workplace Handbook`, Version 2.1) is included in the project root:
+- **Location:** `./demo_document.pdf`
+- **Page Count:** 7 pages (clean typography, clear section headings, page attribution).
+
+#### Recommended Manual Test Queries:
+1. **Answerable — Working Hours:** *"What are the standard working hours?"* (Page 2: 9:00 AM to 6:00 PM).
+2. **Answerable — Casual Leave:** *"How many casual leave days are provided each year?"* (Page 3: 12 days per calendar year).
+3. **Answerable — Planned Leave:** *"When should planned leave be submitted?"* (Page 3: at least 2 working days in advance).
+4. **Answerable — Security Controls:** *"What security controls are required for company systems?"* (Page 4: Company accounts, MFA, screen lock).
+5. **Answerable — Damaged Equipment:** *"What is the deadline for reporting damaged company equipment?"* (Page 6: within 1 business day).
+6. **Answerable — Expense Approval:** *"What approval is required for expenses above ₹10,000?"* (Page 6: manager approval before purchase).
+7. **Unanswerable — Maternity Leave:** *"What is the company's maternity leave policy?"* (Not in document; tests empty-context refusal).
+8. **Unanswerable — Performance Bonus:** *"What is the annual performance bonus?"* (Not in document; tests refusal without hallucinating).
 
 ### System Requirements
 - Node.js 18+ (tested on Node.js v22.19.0)

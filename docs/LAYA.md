@@ -100,8 +100,7 @@ Each result in the batch returns structured output conforming to:
 ## 4. Strict Normalization & Error Handling
 
 - **Decision Normalization**: The adapter inspects `answers.relevance.choice`. Only exact normalized tokens `"keep"` and `"drop"` are accepted.
-- **Validation Strictness**: If the runtime produces an invalid, ambiguous, or unexpected decision token (e.g. `"maybe"`, empty string, or timeout), the system throws an explicit validation error. It **never** silently defaults or guesses.
-- **Zero Hallucination**: Because Laya does not generate free-form text, there is zero risk of prompt injection or generative hallucination altering the decision structure.
+- **Non-Generative Decision Structure**: Because Laya produces categorical decisions rather than autoregressive text tokens, the evaluation step does not suffer from generative text drift or prompt injection altering the decision structure.
 
 ---
 

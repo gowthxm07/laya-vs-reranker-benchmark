@@ -110,7 +110,8 @@ PatternRAG Lab provides an end-to-end evaluation environment for post-retrieval 
 ### Final Research Validation & Demo Preparation (Phase 8)
 - **Empirical Research Findings Report (`docs/FINAL_RESULTS.md`)**: Full 36-case statistical audit across 9 categories, formalizing the multi-attribute Pareto tradeoffs between Cross-Encoder and Laya.
 - **Demonstration Script & Presentation Walkthrough (`docs/DEMO_GUIDE.md`)**: Complete 10-segment guide for presenting the laboratory to researchers and stakeholders.
-- **Hardware Profile & Execution Audits**: Documented local CPU execution realities (Cross-Encoder: 450–1,950 ms; Laya: 5.6–13.2 s; Ollama llama3.2:3b: 39–45 s) versus GPU scale.
+- **Hardware Profile & Execution Audits**: Documented local CPU execution realities (Cross-Encoder: 450–1,950 ms; Laya: 5.6–13.2 s; Ollama llama3.2:3b: 39–45 s) as directly measured in the local CPU runtime environment.
+- **Realistic Demo Document (`demo_document.pdf`)**: Included 7-page company policy handbook in the repository root for manual interactive testing.
 - **Frozen Architecture & Parity Assurance**: Enforced immutable candidate pool preservation, zero score leakage, identical generation prompts and parameters (`temperature=0`, `seed=42`).
 
 ### Research Dashboard, UX Refinement & Analysis Audit (Phase 7)

@@ -197,8 +197,8 @@ Phase 5 strictly implements execution and inspection of answers and latencies.
 **DO NOT declare a "Winner" in Phase 5.**
 
 Phase 6 will introduce objective evaluation metrics:
-- Faithfulness and hallucination rate
-- Answer relevancy
+- Downstream fact coverage and lexical groundedness
+- Answer reference similarity
 - Token efficiency ratio
 - Context reduction precision and recall
 - Automated evaluation datasets
