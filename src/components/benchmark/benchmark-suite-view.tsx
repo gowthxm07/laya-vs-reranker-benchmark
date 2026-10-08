@@ -691,7 +691,7 @@ export function BenchmarkSuiteView({
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-accent" />
                 <h3 className="text-xs font-semibold text-text-primary">
-                  Category Breakdown Across 9 Retrieval Conditions
+                  Category Breakdown Across 9 Benchmark Categories
                 </h3>
               </div>
             </div>

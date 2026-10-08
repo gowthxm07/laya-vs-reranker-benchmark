@@ -592,9 +592,9 @@ export default function HomePage() {
             <span className="text-text-primary font-semibold">Scientific Protocol:</span>
             <span>36 Evaluation Cases</span>
             <span className="text-border-subtle">•</span>
-            <span>9 Retrieval Conditions</span>
+            <span>9 Benchmark Categories</span>
             <span className="text-border-subtle">•</span>
-            <span>2 Strategies (Cross-Encoder vs Laya)</span>
+            <span>2 Relevance Strategies (Cross-Encoder vs Laya)</span>
             <span className="text-border-subtle">•</span>
             <span>Shared Candidate Pool</span>
             <span className="text-border-subtle">•</span>

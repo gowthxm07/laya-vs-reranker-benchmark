@@ -112,7 +112,7 @@ PatternRAG Lab provides an end-to-end evaluation environment for post-retrieval 
   - `[Interactive RAG Lab]`: Ingestion, vector retrieval, manual triggers, and live side-by-side generation.
   - `[Controlled Benchmark Suite]`: 36-case objective benchmark execution, mode switching, metric groupings, Pareto tradeoffs, and query inspector.
   - `[Run History & Results]`: Direct loading and inspection of persisted runs from `data/benchmark/results/*.json`.
-  - Compact horizontal Scientific Protocol summary row (`36 Queries · 9 Conditions · 2 Relevance Strategies · Shared Candidate Pool · Shared LLM`).
+  - Compact horizontal Scientific Protocol summary row (`36 Evaluation Cases · 9 Benchmark Categories · 2 Relevance Strategies (Cross-Encoder vs Laya) · Shared Candidate Pool · Shared LLM (llama3.2:3b)`).
 - **3 Conceptual Metric Groups**:
   - **Relevance Quality**: Precision, Recall, F1, Hit Rate, MRR / NDCG (ranking-only; N/A for unordered binary gating).
   - **Context & Computational Efficiency**: Context Reduction %, Token Reduction %, Initial vs Retained Tokens, Latencies (Relevance, Generation, Total).
@@ -127,7 +127,7 @@ PatternRAG Lab provides an end-to-end evaluation environment for post-retrieval 
 
 ### Objective Benchmark Suite & Multi-Metric Evaluation (Phase 6)
 - **36 Deterministic Benchmark Cases**:
-  - Version-controlled dataset spanning 9 retrieval conditions: `NORMAL`, `DISTRACTOR_HEAVY`, `MULTI_CHUNK`, `AMBIGUOUS`, `PARTIAL_CONTEXT`, `NO_ANSWER`, `SINGLE_RELEVANT`, `CONFLICTING_CONTEXT`, `LONG_CONTEXT`.
+  - Version-controlled dataset spanning 9 benchmark categories: `NORMAL`, `DISTRACTOR_HEAVY`, `MULTI_CHUNK`, `AMBIGUOUS`, `PARTIAL_CONTEXT`, `NO_ANSWER`, `SINGLE_RELEVANT`, `CONFLICTING_CONTEXT`, `LONG_CONTEXT`.
   - Independent ground truth without model-generated labels or circular LLM scoring.
 - **Comprehensive Relevance & Efficiency Metrics**:
   - **Relevance Selection**: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).

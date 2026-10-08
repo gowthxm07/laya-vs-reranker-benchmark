@@ -97,7 +97,7 @@ The benchmark dataset is located at [`data/benchmark/benchmark-dataset.json`](..
 
 ---
 
-## 4. Benchmark Categories (9 Diverse Retrieval Conditions)
+## 4. Benchmark Categories (9 Evaluation Categories)
 
 The dataset contains 4 cases across each of the 9 categories (36 total cases):
 

@@ -111,7 +111,7 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 
 ### Phase 6 — Evaluation Metrics & Benchmark Suite (Completed)
 - [x] Defined benchmark domain types in `src/lib/types/benchmark.ts` (`BenchmarkCategory`, `BenchmarkCase`, `RelevanceMetrics`, `ContextEfficiencyMetrics`, `AnswerQualityMetrics`, `FailureClassification`, `QueryBenchmarkResult`, `MetricAggregate`, `CategoryAggregate`, `PairedComparisonSummary`, `ParetoAnalysisSummary`, `BenchmarkSuiteResult`).
-- [x] Curated deterministic 36-case benchmark dataset in `data/benchmark/benchmark-dataset.json` spanning 9 distinct retrieval conditions (`NORMAL`, `DISTRACTOR_HEAVY`, `MULTI_CHUNK`, `AMBIGUOUS`, `PARTIAL_CONTEXT`, `NO_ANSWER`, `SINGLE_RELEVANT`, `CONFLICTING_CONTEXT`, `LONG_CONTEXT`).
+- [x] Curated deterministic 36-case benchmark dataset in `data/benchmark/benchmark-dataset.json` spanning 9 benchmark categories (`NORMAL`, `DISTRACTOR_HEAVY`, `MULTI_CHUNK`, `AMBIGUOUS`, `PARTIAL_CONTEXT`, `NO_ANSWER`, `SINGLE_RELEVANT`, `CONFLICTING_CONTEXT`, `LONG_CONTEXT`).
 - [x] Implemented `BenchmarkDatasetService` enforcing schema invariants, unique IDs, candidate chunk validity, and ground truth integrity.
 - [x] Implemented `BenchmarkEvaluator` calculating:
   - Relevance metrics: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).
@@ -142,7 +142,7 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
   - `[Interactive RAG Lab]`: Document ingestion, candidate retrieval, manual reranking/filtering triggers, side-by-side answer generation workspace.
   - `[Controlled Benchmark Suite]`: 36-case objective suite, mode switcher, 3 conceptual metric groups, Pareto analysis, paired differences, and per-query inspector.
   - `[Run History & Results]`: Persisted JSON run browser loading historical results directly from `data/benchmark/results/*.json`.
-  - Added compact horizontal Scientific Protocol summary row (`36 Queries · 9 Conditions · 2 Relevance Strategies · Shared Candidate Pool · Shared LLM`).
+  - Added compact horizontal Scientific Protocol summary row (`36 Evaluation Cases · 9 Benchmark Categories · 2 Relevance Strategies (Cross-Encoder vs Laya) · Shared Candidate Pool · Shared LLM (llama3.2:3b)`).
 - [x] **3 Conceptual Metric Groups**: Relevance Quality, Context & Computational Efficiency, Downstream Answer Quality.
 - [x] **Side-by-Side Chunk Decision Inspector**: Implemented candidate chunk alignment table in `QueryDetailModal` displaying `Chunk 01: CE [Selected] | Laya [KEEP] | GT [RELEVANT]`, highlighting agreements, false positives, and false negatives with text snippet preview.
 - [x] **Persistence & Export Capabilities**:
