@@ -9,6 +9,7 @@ import { CandidatePoolInspector } from "@/components/retrieval/candidate-pool-in
 import { RerankedPoolInspector } from "@/components/reranking/reranked-pool-inspector";
 import { LayaFilteredPoolInspector } from "@/components/laya/laya-filtered-pool-inspector";
 import { ComparisonWorkspace } from "@/components/comparison/comparison-workspace";
+import { BenchmarkSuiteView } from "@/components/benchmark/benchmark-suite-view";
 import { MetricsDashboard } from "@/components/metrics/metrics-dashboard";
 import { DesignPatternInspector } from "@/components/patterns/design-pattern-inspector";
 import { SAMPLE_DATASETS } from "@/lib/config/datasets";
@@ -19,7 +20,7 @@ import { RerankedCandidatePool } from "@/lib/types/reranker";
 import { LayaFilteredPool } from "@/lib/types/laya";
 import { ComparisonResult, ComparisonMode } from "@/lib/types/comparison";
 import { Experiment } from "@/lib/types/experiment";
-import { Terminal, Cpu, AlertCircle } from "lucide-react";
+import { Terminal, Cpu, AlertCircle, BarChart3, Compass } from "lucide-react";
 
 export default function HomePage() {
   const [selectedDataset, setSelectedDataset] = React.useState<DocumentDataset>(
@@ -56,6 +57,9 @@ export default function HomePage() {
   const [comparisonResult, setComparisonResult] =
     React.useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = React.useState<boolean>(false);
+
+  // View Navigation: "lab" (Interactive Workspace) vs "benchmark" (Phase 6 Objective Suite)
+  const [activeTab, setActiveTab] = React.useState<"lab" | "benchmark">("lab");
 
   // Initial experiment model
   const [currentExperiment, setCurrentExperiment] = React.useState<Experiment>({
@@ -578,70 +582,109 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 1. Document Ingestion Card (Phase 2 Component) */}
-        <DocumentIngestionCard
-          indexedDoc={indexedDoc}
-          totalChunks={totalIndexedChunks}
-          onDocumentIngested={handleDocumentIngested}
-          onClearIndex={handleClearIndex}
-        />
+        {/* Main View Mode Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="inline-flex rounded-lg border border-border p-1 bg-surface">
+            <button
+              onClick={() => setActiveTab("lab")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs transition-colors ${
+                activeTab === "lab"
+                  ? "bg-accent text-white font-semibold shadow-sm"
+                  : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated/40"
+              }`}
+            >
+              <Compass className="h-4 w-4" />
+              <span>Interactive RAG Lab</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("benchmark")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs transition-colors ${
+                activeTab === "benchmark"
+                  ? "bg-accent text-white font-semibold shadow-sm"
+                  : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated/40"
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>Controlled Benchmark Suite (Phase 6)</span>
+            </button>
+          </div>
 
-        {/* 2. Benchmark Query & Top-K Retrieval Control Bar */}
-        <BenchmarkControlBar
-          selectedDataset={selectedDataset}
-          onSelectDataset={(ds) => {
-            setSelectedDataset(ds);
-            setCurrentExperiment((prev) => ({ ...prev, dataset: ds }));
-          }}
-          query={query}
-          onChangeQuery={setQuery}
-          topK={topK}
-          onChangeTopK={setTopK}
-          onRetrieveCandidates={handleRetrieveCandidates}
-          isRunning={isRetrieving}
-        />
+          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-text-muted">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Ollama llama3.2:3b & nomic-embed-text</span>
+          </div>
+        </div>
 
-        {/* 3a. Shared Candidate Chunk Pool Inspector (Phase 2 Foundation) */}
-        <CandidatePoolInspector
-          pool={candidatePool}
-          isLoading={isRetrieving}
-          onRunRerank={handleRunRerank}
-          isReranking={isReranking}
-          topN={rerankTopN}
-          onTopNChange={setRerankTopN}
-          hasReranked={!!rerankedPool}
-          onRunLayaFilter={handleRunLayaFilter}
-          isFilteringLaya={isFilteringLaya}
-          hasLayaFiltered={!!layaPool}
-        />
+        {activeTab === "benchmark" ? (
+          <BenchmarkSuiteView />
+        ) : (
+          <>
+            {/* 1. Document Ingestion Card (Phase 2 Component) */}
+            <DocumentIngestionCard
+              indexedDoc={indexedDoc}
+              totalChunks={totalIndexedChunks}
+              onDocumentIngested={handleDocumentIngested}
+              onClearIndex={handleClearIndex}
+            />
 
-        {/* 3b. Cross-Encoder Reranked Pool Inspector (Phase 3 Baseline) */}
-        {rerankedPool && (
-          <RerankedPoolInspector
-            rerankedPool={rerankedPool}
-            isLoading={isReranking}
-          />
+            {/* 2. Benchmark Query & Top-K Retrieval Control Bar */}
+            <BenchmarkControlBar
+              selectedDataset={selectedDataset}
+              onSelectDataset={(ds) => {
+                setSelectedDataset(ds);
+                setCurrentExperiment((prev) => ({ ...prev, dataset: ds }));
+              }}
+              query={query}
+              onChangeQuery={setQuery}
+              topK={topK}
+              onChangeTopK={setTopK}
+              onRetrieveCandidates={handleRetrieveCandidates}
+              isRunning={isRetrieving}
+            />
+
+            {/* 3a. Shared Candidate Chunk Pool Inspector (Phase 2 Foundation) */}
+            <CandidatePoolInspector
+              pool={candidatePool}
+              isLoading={isRetrieving}
+              onRunRerank={handleRunRerank}
+              isReranking={isReranking}
+              topN={rerankTopN}
+              onTopNChange={setRerankTopN}
+              hasReranked={!!rerankedPool}
+              onRunLayaFilter={handleRunLayaFilter}
+              isFilteringLaya={isFilteringLaya}
+              hasLayaFiltered={!!layaPool}
+            />
+
+            {/* 3b. Cross-Encoder Reranked Pool Inspector (Phase 3 Baseline) */}
+            {rerankedPool && (
+              <RerankedPoolInspector
+                rerankedPool={rerankedPool}
+                isLoading={isReranking}
+              />
+            )}
+
+            {/* 3c. Laya Filtered Pool Inspector (Phase 4 Semantic Pruning) */}
+            {layaPool && (
+              <LayaFilteredPoolInspector
+                layaPool={layaPool}
+                isLoading={isFilteringLaya}
+              />
+            )}
+
+            {/* 4. Side-by-Side Comparison Workspace (Path A & Path B Active) */}
+            <ComparisonWorkspace
+              experiment={currentExperiment}
+              candidatePool={candidatePool}
+              comparisonResult={comparisonResult}
+              onRunComparison={handleRunComparison}
+              isComparing={isComparing}
+            />
+
+            {/* 5. Differential Metrics Dashboard */}
+            <MetricsDashboard experiment={currentExperiment} />
+          </>
         )}
-
-        {/* 3c. Laya Filtered Pool Inspector (Phase 4 Semantic Pruning) */}
-        {layaPool && (
-          <LayaFilteredPoolInspector
-            layaPool={layaPool}
-            isLoading={isFilteringLaya}
-          />
-        )}
-
-        {/* 4. Side-by-Side Comparison Workspace (Path A & Path B Active) */}
-        <ComparisonWorkspace
-          experiment={currentExperiment}
-          candidatePool={candidatePool}
-          comparisonResult={comparisonResult}
-          onRunComparison={handleRunComparison}
-          isComparing={isComparing}
-        />
-
-        {/* 5. Differential Metrics Dashboard */}
-        <MetricsDashboard experiment={currentExperiment} />
 
         {/* 6. Architecture Foundation Card */}
         <section className="rounded-lg border border-border bg-surface-elevated/20 p-4 sm:p-5 text-xs">

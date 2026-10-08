@@ -1,0 +1,2519 @@
+[
+  {
+    "id": "bench-norm-01",
+    "category": "NORMAL",
+    "query": "What is the primary role of positional encoding in Transformer models?",
+    "description": "Standard retrieval with a clearly relevant chunk explaining positional encodings among general Transformer architectural text.",
+    "relevantChunkIds": [
+      "norm-01-c1"
+    ],
+    "referenceAnswer": "Positional encodings provide sequence order and token position information to the model since Transformers lack recurrence and convolution.",
+    "answerable": true,
+    "requiredFacts": [
+      "positional encoding",
+      "recurrence",
+      "order"
+    ],
+    "candidateChunks": [
+      {
+        "id": "norm-01-c1",
+        "documentId": "doc-transformer",
+        "source": "attention-is-all-you-need.pdf",
+        "pageNumber": 3,
+        "section": "Positional Encoding",
+        "text": "Because the Transformer model contains no recurrence and no convolution, positional encodings are injected at the bottoms of the encoder and decoder stacks to provide token order information.",
+        "retrievalScore": 0.88,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-01-c2",
+        "documentId": "doc-transformer",
+        "source": "attention-is-all-you-need.pdf",
+        "pageNumber": 2,
+        "section": "Model Architecture",
+        "text": "The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers: a multi-head self-attention mechanism and a simple position-wise fully connected feed-forward network.",
+        "retrievalScore": 0.79,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-01-c3",
+        "documentId": "doc-transformer",
+        "source": "attention-is-all-you-need.pdf",
+        "pageNumber": 4,
+        "section": "Embeddings",
+        "text": "Similarly to other sequence transduction models, we use learned embeddings to convert the input tokens and output tokens to vectors of dimension d_model = 512.",
+        "retrievalScore": 0.73,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-01-c4",
+        "documentId": "doc-transformer",
+        "source": "attention-is-all-you-need.pdf",
+        "pageNumber": 5,
+        "section": "Training",
+        "text": "The models were trained on one machine with 8 NVIDIA P100 GPUs using the Adam optimizer with beta_1 = 0.9, beta_2 = 0.98 and epsilon = 10^-9.",
+        "retrievalScore": 0.65,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-norm-02",
+    "category": "NORMAL",
+    "query": "How does Raft handle leader election when a follower node times out?",
+    "description": "Standard consensus protocol query with clearly relevant chunk among background consensus passages.",
+    "relevantChunkIds": [
+      "norm-02-c1"
+    ],
+    "referenceAnswer": "When an election timeout elapses without receiving heartbeats, a follower increments its current term, transitions to candidate state, votes for itself, and broadcasts RequestVote RPCs.",
+    "answerable": true,
+    "requiredFacts": [
+      "candidate",
+      "requestvote",
+      "term"
+    ],
+    "candidateChunks": [
+      {
+        "id": "norm-02-c1",
+        "documentId": "doc-raft",
+        "source": "in-search-of-raft-consensus.pdf",
+        "pageNumber": 4,
+        "section": "Leader Election",
+        "text": "When an election timeout elapses without receiving heartbeats, a follower increments its current term, transitions to candidate state, votes for itself, and issues RequestVote RPCs in parallel to all other nodes.",
+        "retrievalScore": 0.89,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-02-c2",
+        "documentId": "doc-raft",
+        "source": "in-search-of-raft-consensus.pdf",
+        "pageNumber": 5,
+        "section": "Log Replication",
+        "text": "Once a leader has been elected, it begins servicing client requests. Each client request contains a command to be executed by the replicated state machines.",
+        "retrievalScore": 0.77,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-02-c3",
+        "documentId": "doc-raft",
+        "source": "in-search-of-raft-consensus.pdf",
+        "pageNumber": 2,
+        "section": "Raft Basics",
+        "text": "A Raft cluster consists of several servers; typical numbers are 5 to tolerate 2 failures. At any given time each server is in one of three states: leader, follower, or candidate.",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-02-c4",
+        "documentId": "doc-raft",
+        "source": "in-search-of-raft-consensus.pdf",
+        "pageNumber": 6,
+        "section": "Safety Invariant",
+        "text": "Raft guarantees that if a leader has committed a particular log entry for a given term, that entry will be present in the logs of all leaders for higher terms.",
+        "retrievalScore": 0.68,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-norm-03",
+    "category": "NORMAL",
+    "query": "What mechanism does Redis use to achieve persistence without blocking the main execution thread?",
+    "description": "Standard database query with one direct answer chunk describing background snapshotting.",
+    "relevantChunkIds": [
+      "norm-03-c1"
+    ],
+    "referenceAnswer": "Redis uses background saving (BGSAVE) which forks a child process using copy-on-write to write the RDB snapshot to disk without blocking the main execution thread.",
+    "answerable": true,
+    "requiredFacts": [
+      "bgsave",
+      "copy-on-write",
+      "fork"
+    ],
+    "candidateChunks": [
+      {
+        "id": "norm-03-c1",
+        "documentId": "doc-redis",
+        "source": "redis-system-architecture.md",
+        "pageNumber": 1,
+        "section": "RDB Persistence",
+        "text": "Redis achieves asynchronous persistence using the BGSAVE command, which forks a dedicated child process. Leveraging OS copy-on-write memory pages, the child process writes the RDB dataset snapshot to disk while the parent thread continues executing client commands.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-03-c2",
+        "documentId": "doc-redis",
+        "source": "redis-system-architecture.md",
+        "pageNumber": 2,
+        "section": "AOF Logging",
+        "text": "The Append Only File (AOF) logs every write command received by the server. Redis can rewrite the AOF log in the background to rebuild an identical minimal state without blocking queries.",
+        "retrievalScore": 0.81,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-03-c3",
+        "documentId": "doc-redis",
+        "source": "redis-system-architecture.md",
+        "pageNumber": 3,
+        "section": "Event Loop",
+        "text": "Redis runs an event-driven multiplexed event loop based on epoll/kqueue. The single-threaded execution model processes incoming requests sequentially without locking overhead.",
+        "retrievalScore": 0.75,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-03-c4",
+        "documentId": "doc-redis",
+        "source": "redis-system-architecture.md",
+        "pageNumber": 4,
+        "section": "Replication",
+        "text": "Leader-follower replication in Redis allows replicas to be exact copies of master instances. Replication is asynchronous with low latency.",
+        "retrievalScore": 0.66,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-norm-04",
+    "category": "NORMAL",
+    "query": "What is the function of the ribosome in protein synthesis?",
+    "description": "Biology benchmark question with a clear relevant chunk explaining translation.",
+    "relevantChunkIds": [
+      "norm-04-c1"
+    ],
+    "referenceAnswer": "Ribosomes translate messenger RNA (mRNA) genetic sequences into polypeptide chains by recruiting corresponding tRNA amino acids during translation.",
+    "answerable": true,
+    "requiredFacts": [
+      "translate",
+      "mrna",
+      "amino acid"
+    ],
+    "candidateChunks": [
+      {
+        "id": "norm-04-c1",
+        "documentId": "doc-bio",
+        "source": "cellular-molecular-biology.pdf",
+        "pageNumber": 7,
+        "section": "Translation",
+        "text": "The ribosome is the primary molecular machine responsible for protein synthesis. It translates genetic codes transcribed in mRNA into specific peptide chains by recruiting corresponding tRNA amino acids during translation.",
+        "retrievalScore": 0.92,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-04-c2",
+        "documentId": "doc-bio",
+        "source": "cellular-molecular-biology.pdf",
+        "pageNumber": 6,
+        "section": "Transcription",
+        "text": "Transcription is carried out by RNA polymerase, which reads the template DNA strand to synthesize a complementary single-stranded pre-mRNA transcript in the cell nucleus.",
+        "retrievalScore": 0.78,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-04-c3",
+        "documentId": "doc-bio",
+        "source": "cellular-molecular-biology.pdf",
+        "pageNumber": 3,
+        "section": "Endoplasmic Reticulum",
+        "text": "The rough endoplasmic reticulum is studded with ribosomes and is primarily involved in the folding and post-translational modification of newly synthesized proteins.",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "norm-04-c4",
+        "documentId": "doc-bio",
+        "source": "cellular-molecular-biology.pdf",
+        "pageNumber": 2,
+        "section": "Mitochondria",
+        "text": "Mitochondria generate cellular adenosine triphosphate (ATP) through oxidative phosphorylation and contain their own distinct circular genome.",
+        "retrievalScore": 0.62,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-dist-01",
+    "category": "DISTRACTOR_HEAVY",
+    "query": "What temperature range is required for tempering dark chocolate?",
+    "description": "One specific passage on dark chocolate tempering surrounded by diverse distractors on other thermal processes.",
+    "relevantChunkIds": [
+      "dist-01-c1"
+    ],
+    "referenceAnswer": "Tempering dark chocolate requires heating to 45°C, cooling to 27°C, and then reheating to the working range of 31°C to 32°C.",
+    "answerable": true,
+    "requiredFacts": [
+      "31",
+      "32",
+      "temper"
+    ],
+    "candidateChunks": [
+      {
+        "id": "dist-01-c1",
+        "documentId": "doc-culinary",
+        "source": "confectionery-principles.pdf",
+        "pageNumber": 12,
+        "section": "Chocolate Tempering",
+        "text": "Properly tempering dark chocolate requires melting to 45°C, cooling down to 27°C to form beta crystal seeds, and gently reheating to the final working temperature range of 31°C to 32°C.",
+        "retrievalScore": 0.87,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-01-c2",
+        "documentId": "doc-culinary",
+        "source": "confectionery-principles.pdf",
+        "pageNumber": 4,
+        "section": "Croissant Baking",
+        "text": "Croissant dough should be baked in a convection oven preheated to 190°C to 200°C for approximately 18 minutes to ensure rapid oven spring and flaky layering.",
+        "retrievalScore": 0.81,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-01-c3",
+        "documentId": "doc-culinary",
+        "source": "confectionery-principles.pdf",
+        "pageNumber": 8,
+        "section": "Caramelization",
+        "text": "Sugar begins caramelizing around 160°C to 180°C as sucrose decomposes into fructose and glucose, producing nutty diacetyl aroma compounds.",
+        "retrievalScore": 0.76,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-01-c4",
+        "documentId": "doc-culinary",
+        "source": "metallurgy-basics.pdf",
+        "pageNumber": 3,
+        "section": "Steel Heat Treatment",
+        "text": "Martensitic carbon steel is quenched from 850°C in oil, followed by tempering between 150°C and 250°C to relieve internal stresses and restore ductility.",
+        "retrievalScore": 0.71,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-01-c5",
+        "documentId": "doc-culinary",
+        "source": "confectionery-principles.pdf",
+        "pageNumber": 15,
+        "section": "Coffee Roasting",
+        "text": "First crack in coffee roasting occurs around 196°C, signaling the end of endothermic drying and the start of light roast development.",
+        "retrievalScore": 0.67,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-dist-02",
+    "category": "DISTRACTOR_HEAVY",
+    "query": "Which CPU microarchitecture generation introduced AVX-512 vector extensions?",
+    "description": "One precise passage on Intel Skylake AVX-512 surrounded by distractors about other vector architectures.",
+    "relevantChunkIds": [
+      "dist-02-c1"
+    ],
+    "referenceAnswer": "AVX-512 512-bit vector extensions were introduced with the Intel Skylake-SP server and Skylake-X client processor microarchitectures.",
+    "answerable": true,
+    "requiredFacts": [
+      "skylake",
+      "avx-512",
+      "intel"
+    ],
+    "candidateChunks": [
+      {
+        "id": "dist-02-c1",
+        "documentId": "doc-hardware",
+        "source": "intel-microarchitecture-history.pdf",
+        "pageNumber": 8,
+        "section": "AVX-512 Introduction",
+        "text": "Intel introduced the 512-bit AVX-512 instruction set extension with the Skylake microarchitecture generation (Skylake-SP and Skylake-X), doubling SIMD register width over AVX2.",
+        "retrievalScore": 0.9,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-02-c2",
+        "documentId": "doc-hardware",
+        "source": "arm-architecture-manual.pdf",
+        "pageNumber": 5,
+        "section": "ARM SVE",
+        "text": "ARM Scalable Vector Extension (SVE) introduces vector-length agnostic SIMD operations supporting 128-bit up to 2048-bit execution on modern Neoverse cores.",
+        "retrievalScore": 0.83,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-02-c3",
+        "documentId": "doc-hardware",
+        "source": "gpu-tensor-cores.pdf",
+        "pageNumber": 3,
+        "section": "Tensor Cores",
+        "text": "NVIDIA Volta microarchitecture introduced Tensor Cores, executing 4x4 matrix multiply-accumulate operations in FP16 with mixed-precision FP32 accumulation.",
+        "retrievalScore": 0.79,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-02-c4",
+        "documentId": "doc-hardware",
+        "source": "x86-simd-evolution.pdf",
+        "pageNumber": 2,
+        "section": "SSE2 History",
+        "text": "Intel SSE2 was introduced with the Pentium 4 processor in 2000, adding 128-bit double-precision floating-point SIMD math to the x86 instruction set.",
+        "retrievalScore": 0.74,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-02-c5",
+        "documentId": "doc-hardware",
+        "source": "riscv-vector-spec.pdf",
+        "pageNumber": 4,
+        "section": "RISC-V Vector",
+        "text": "The RISC-V Vector Extension (RVV) defines dynamic vector configuration through vsetvli, decoupling instruction encoding from physical register length.",
+        "retrievalScore": 0.69,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-dist-03",
+    "category": "DISTRACTOR_HEAVY",
+    "query": "What consensus protocol does Apache Kafka use for metadata management in KRaft mode?",
+    "description": "One target chunk on KRaft (Kafka Raft) surrounded by distractors about ZooKeeper, Paxos, etcd, and Gossip.",
+    "relevantChunkIds": [
+      "dist-03-c1"
+    ],
+    "referenceAnswer": "Apache Kafka uses KRaft, an event-driven Raft consensus variant with an event-driven metadata quorum, replacing ZooKeeper.",
+    "answerable": true,
+    "requiredFacts": [
+      "kraft",
+      "quorum",
+      "raft"
+    ],
+    "candidateChunks": [
+      {
+        "id": "dist-03-c1",
+        "documentId": "doc-kafka",
+        "source": "kafka-kraft-architecture.md",
+        "pageNumber": 2,
+        "section": "KRaft Protocol",
+        "text": "In KRaft mode, Apache Kafka manages cluster metadata using a specialized Raft quorum. Metadata is stored in a replicated internal topic (@metadata) and managed directly by controller brokers.",
+        "retrievalScore": 0.88,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-03-c2",
+        "documentId": "doc-kafka",
+        "source": "kafka-kraft-architecture.md",
+        "pageNumber": 1,
+        "section": "Legacy ZooKeeper",
+        "text": "Historically, Kafka clusters relied on Apache ZooKeeper to maintain broker registrations, dynamic topic configurations, and partition leader elections via atomic znode trees.",
+        "retrievalScore": 0.84,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-03-c3",
+        "documentId": "doc-distributed",
+        "source": "distributed-systems-overview.md",
+        "pageNumber": 6,
+        "section": "Paxos Consensus",
+        "text": "Leslie Lamport introduced Multi-Paxos, where a distinguished proposer coordinates synod rounds with acceptors using prepare and accept phases to achieve consensus.",
+        "retrievalScore": 0.78,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-03-c4",
+        "documentId": "doc-distributed",
+        "source": "distributed-systems-overview.md",
+        "pageNumber": 8,
+        "section": "etcd Raft",
+        "text": "etcd uses a pure Go implementation of the Raft consensus algorithm to provide strongly consistent distributed key-value storage for Kubernetes control planes.",
+        "retrievalScore": 0.72,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-03-c5",
+        "documentId": "doc-distributed",
+        "source": "distributed-systems-overview.md",
+        "pageNumber": 9,
+        "section": "Cassandra Gossip",
+        "text": "Apache Cassandra relies on a decentralized peer-to-peer Gossip communication protocol, exchanging node state information every second via Scuttlebutt algorithms.",
+        "retrievalScore": 0.66,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-dist-04",
+    "category": "DISTRACTOR_HEAVY",
+    "query": "What is the primary role of reverse transcriptase in retroviruses?",
+    "description": "One passage on retroviral reverse transcriptase surrounded by distractors on other polymerases and enzymes.",
+    "relevantChunkIds": [
+      "dist-04-c1"
+    ],
+    "referenceAnswer": "Reverse transcriptase transcribes single-stranded viral RNA genomes into double-stranded complementary DNA (cDNA) for host integration.",
+    "answerable": true,
+    "requiredFacts": [
+      "cdna",
+      "rna",
+      "transcribe"
+    ],
+    "candidateChunks": [
+      {
+        "id": "dist-04-c1",
+        "documentId": "doc-virology",
+        "source": "retrovirus-replication.pdf",
+        "pageNumber": 3,
+        "section": "Reverse Transcription",
+        "text": "In retroviruses such as HIV, reverse transcriptase synthesizes a complementary DNA (cDNA) strand from the single-stranded viral RNA template before integrating into the host genome.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-04-c2",
+        "documentId": "doc-virology",
+        "source": "dna-replication-enzymes.pdf",
+        "pageNumber": 2,
+        "section": "DNA Polymerase",
+        "text": "DNA Polymerase III replicates DNA bidirectionally from replication forks, synthesizing the leading strand continuously and the lagging strand via Okazaki fragments.",
+        "retrievalScore": 0.82,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-04-c3",
+        "documentId": "doc-virology",
+        "source": "dna-replication-enzymes.pdf",
+        "pageNumber": 4,
+        "section": "DNA Ligase",
+        "text": "DNA Ligase catalyzes phosphodiester bond formation between adjacent 3'-hydroxyl and 5'-phosphate termini to seal nicks in the sugar-phosphate backbone.",
+        "retrievalScore": 0.77,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-04-c4",
+        "documentId": "doc-virology",
+        "source": "crispr-mechanisms.pdf",
+        "pageNumber": 1,
+        "section": "CRISPR Cas9",
+        "text": "Cas9 endonuclease forms a ribonucleoprotein complex with guide RNA to introduce double-strand breaks at complementary protospacer adjacent motif (PAM) sites.",
+        "retrievalScore": 0.7,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "dist-04-c5",
+        "documentId": "doc-virology",
+        "source": "dna-replication-enzymes.pdf",
+        "pageNumber": 5,
+        "section": "Helicase",
+        "text": "Helicase unwinds double-stranded DNA by breaking hydrogen bonds between nucleotide bases using energy derived from ATP hydrolysis.",
+        "retrievalScore": 0.65,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-multi-01",
+    "category": "MULTI_CHUNK",
+    "query": "What are the two distinct pre-training objectives used to train the BERT language model?",
+    "description": "Requires synthesizing information from two distinct passages: Masked Language Model (MLM) and Next Sentence Prediction (NSP).",
+    "relevantChunkIds": [
+      "multi-01-c1",
+      "multi-01-c2"
+    ],
+    "referenceAnswer": "BERT is pre-trained using two objectives: Masked Language Modeling (MLM), where 15% of input tokens are masked and predicted, and Next Sentence Prediction (NSP), which predicts whether sentence B follows sentence A.",
+    "answerable": true,
+    "requiredFacts": [
+      "masked language model",
+      "next sentence prediction"
+    ],
+    "candidateChunks": [
+      {
+        "id": "multi-01-c1",
+        "documentId": "doc-bert",
+        "source": "bert-paper.pdf",
+        "pageNumber": 3,
+        "section": "Task #1: MLM",
+        "text": "The first pre-training objective of BERT is Masked Language Model (MLM). We mask 15% of all WordPiece tokens at random and train the deep bidirectional Transformer to predict the masked vocabulary IDs.",
+        "retrievalScore": 0.9,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-01-c2",
+        "documentId": "doc-bert",
+        "source": "bert-paper.pdf",
+        "pageNumber": 4,
+        "section": "Task #2: NSP",
+        "text": "The second pre-training objective of BERT is Next Sentence Prediction (NSP). For each training pair, 50% of the time B is the actual next sentence that follows A, and 50% of the time B is a random sentence from the corpus.",
+        "retrievalScore": 0.88,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-01-c3",
+        "documentId": "doc-bert",
+        "source": "bert-paper.pdf",
+        "pageNumber": 2,
+        "section": "Architecture",
+        "text": "BERT's model architecture is a multi-layer bidirectional Transformer encoder based on the original Transformer implementation. BERT_BASE has L=12, H=768, A=12, total parameters=110M.",
+        "retrievalScore": 0.75,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-01-c4",
+        "documentId": "doc-bert",
+        "source": "bert-paper.pdf",
+        "pageNumber": 6,
+        "section": "Fine-tuning",
+        "text": "Fine-tuning BERT is straightforward because the self-attention mechanism in the Transformer allows BERT to model many downstream tasks by swapping out appropriate inputs and outputs.",
+        "retrievalScore": 0.69,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-01-c5",
+        "documentId": "doc-bert",
+        "source": "bert-paper.pdf",
+        "pageNumber": 8,
+        "section": "Ablations",
+        "text": "Our ablation studies demonstrate that bidirectional pre-training is crucial: removing NSP causes significant drops on QNLI and MNLI benchmarks.",
+        "retrievalScore": 0.62,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-multi-02",
+    "category": "MULTI_CHUNK",
+    "query": "What are the two phases of Two-Phase Locking (2PL) and what restriction governs each phase?",
+    "description": "Requires combining the Growing Phase (acquiring locks) and Shrinking Phase (releasing locks) passages.",
+    "relevantChunkIds": [
+      "multi-02-c1",
+      "multi-02-c2"
+    ],
+    "referenceAnswer": "The two phases of 2PL are the Growing Phase, where a transaction may acquire locks but cannot release any, and the Shrinking Phase, where a transaction may release locks but cannot acquire new ones.",
+    "answerable": true,
+    "requiredFacts": [
+      "growing",
+      "shrinking",
+      "locks"
+    ],
+    "candidateChunks": [
+      {
+        "id": "multi-02-c1",
+        "documentId": "doc-database",
+        "source": "concurrency-control-principles.pdf",
+        "pageNumber": 4,
+        "section": "2PL Growing Phase",
+        "text": "In the Growing Phase of Two-Phase Locking (2PL), a transaction may acquire shared or exclusive locks on data items as needed, but it is strictly forbidden from releasing any lock it already holds.",
+        "retrievalScore": 0.89,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-02-c2",
+        "documentId": "doc-database",
+        "source": "concurrency-control-principles.pdf",
+        "pageNumber": 5,
+        "section": "2PL Shrinking Phase",
+        "text": "In the Shrinking Phase of Two-Phase Locking (2PL), a transaction may release previously acquired locks, but it is strictly prohibited from acquiring any new locks until commit or abort.",
+        "retrievalScore": 0.87,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-02-c3",
+        "documentId": "doc-database",
+        "source": "concurrency-control-principles.pdf",
+        "pageNumber": 2,
+        "section": "ACID Properties",
+        "text": "Isolation guarantees that concurrent execution of transactions leaves the database in the same state that would have been obtained if transactions had executed serially.",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-02-c4",
+        "documentId": "doc-database",
+        "source": "concurrency-control-principles.pdf",
+        "pageNumber": 7,
+        "section": "Deadlock Detection",
+        "text": "Deadlocks in lock-based systems can be resolved using wait-for graphs to detect cycles, aborting the victim transaction with minimum rollback cost.",
+        "retrievalScore": 0.68,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-multi-03",
+    "category": "MULTI_CHUNK",
+    "query": "How do the light-dependent reactions and Calvin cycle collaborate in plant photosynthesis?",
+    "description": "Requires synthesizing light reactions (generating ATP and NADPH in thylakoids) and Calvin cycle (consuming them in stroma to fix carbon).",
+    "relevantChunkIds": [
+      "multi-03-c1",
+      "multi-03-c2"
+    ],
+    "referenceAnswer": "Light-dependent reactions in thylakoid membranes produce ATP and NADPH using solar energy, which the Calvin cycle in the stroma consumes to fix carbon dioxide into sugar molecules.",
+    "answerable": true,
+    "requiredFacts": [
+      "atp",
+      "nadph",
+      "calvin",
+      "light"
+    ],
+    "candidateChunks": [
+      {
+        "id": "multi-03-c1",
+        "documentId": "doc-botany",
+        "source": "plant-physiology.pdf",
+        "pageNumber": 8,
+        "section": "Light Reactions",
+        "text": "The light-dependent reactions occur in chloroplast thylakoid membranes. Photons split water molecules (photolysis), generating oxygen while synthesizing high-energy ATP and NADPH via electron transport chains.",
+        "retrievalScore": 0.9,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-03-c2",
+        "documentId": "doc-botany",
+        "source": "plant-physiology.pdf",
+        "pageNumber": 9,
+        "section": "Calvin Cycle",
+        "text": "The light-independent Calvin cycle occurs in the chloroplast stroma. It utilizes the ATP and NADPH generated by light reactions to fix atmospheric carbon dioxide into glyceraldehyde-3-phosphate (G3P) via RuBisCO.",
+        "retrievalScore": 0.88,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-03-c3",
+        "documentId": "doc-botany",
+        "source": "plant-physiology.pdf",
+        "pageNumber": 3,
+        "section": "Chlorophyll Pigments",
+        "text": "Chlorophyll a and b absorb light predominantly in blue (430 nm) and red (660 nm) wavelengths while reflecting green light.",
+        "retrievalScore": 0.73,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-03-c4",
+        "documentId": "doc-botany",
+        "source": "plant-physiology.pdf",
+        "pageNumber": 12,
+        "section": "Cellular Respiration",
+        "text": "Glycolysis in the cytoplasm breaks glucose down into pyruvate, releasing a net yield of two ATP molecules through substrate-level phosphorylation.",
+        "retrievalScore": 0.61,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-multi-04",
+    "category": "MULTI_CHUNK",
+    "query": "What are the three pillars of the RAG Triad used to evaluate retrieval-augmented generation systems?",
+    "description": "Requires three distinct chunks: Context Relevance, Groundedness/Faithfulness, and Answer Relevance.",
+    "relevantChunkIds": [
+      "multi-04-c1",
+      "multi-04-c2",
+      "multi-04-c3"
+    ],
+    "referenceAnswer": "The RAG Triad comprises: 1) Context Relevance (retrieved context matches query), 2) Groundedness/Faithfulness (response supported by context), and 3) Answer Relevance (response answers user query).",
+    "answerable": true,
+    "requiredFacts": [
+      "context relevance",
+      "groundedness",
+      "answer relevance"
+    ],
+    "candidateChunks": [
+      {
+        "id": "multi-04-c1",
+        "documentId": "doc-rag-eval",
+        "source": "rag-triad-evaluation-guide.md",
+        "pageNumber": 1,
+        "section": "Context Relevance",
+        "text": "The first pillar of the RAG Triad is Context Relevance: assessing whether the retrieved context chunks contain relevant information needed to answer the query while filtering noise.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-04-c2",
+        "documentId": "doc-rag-eval",
+        "source": "rag-triad-evaluation-guide.md",
+        "pageNumber": 2,
+        "section": "Groundedness",
+        "text": "The second pillar of the RAG Triad is Groundedness (or Faithfulness): verifying whether every factual claim in the generated answer is directly grounded and supported by the retrieved context without hallucinations.",
+        "retrievalScore": 0.89,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-04-c3",
+        "documentId": "doc-rag-eval",
+        "source": "rag-triad-evaluation-guide.md",
+        "pageNumber": 3,
+        "section": "Answer Relevance",
+        "text": "The third pillar of the RAG Triad is Answer Relevance: verifying whether the LLM's final response directly answers the user's intended question without drifting off-topic.",
+        "retrievalScore": 0.87,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-04-c4",
+        "documentId": "doc-rag-eval",
+        "source": "rag-triad-evaluation-guide.md",
+        "pageNumber": 5,
+        "section": "Semantic Search Baseline",
+        "text": "Dense vector retrieval calculates inner products between dense query embeddings and document chunk embeddings to select top-K candidates.",
+        "retrievalScore": 0.71,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "multi-04-c5",
+        "documentId": "doc-rag-eval",
+        "source": "rag-triad-evaluation-guide.md",
+        "pageNumber": 6,
+        "section": "Cross-Encoder Reranking",
+        "text": "Cross-encoders pass query and passage concatenated into a single transformer to output a joint relevance logit score.",
+        "retrievalScore": 0.66,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-ambig-01",
+    "category": "AMBIGUOUS",
+    "query": "What is the purpose of masking in neural networks?",
+    "description": "Ambiguous query where masking could refer to attention causal masking or masked language modeling; both are valid.",
+    "relevantChunkIds": [
+      "ambig-01-c1",
+      "ambig-01-c2"
+    ],
+    "referenceAnswer": "Masking serves two primary purposes: in autoregressive decoders, causal masking prevents positions from attending to subsequent tokens; in encoder pre-training (like BERT), token masking forces the model to predict hidden words.",
+    "answerable": true,
+    "requiredFacts": [
+      "causal",
+      "future tokens",
+      "masked"
+    ],
+    "candidateChunks": [
+      {
+        "id": "ambig-01-c1",
+        "documentId": "doc-nn",
+        "source": "attention-mechanisms.pdf",
+        "pageNumber": 4,
+        "section": "Causal Masking",
+        "text": "In decoder self-attention, causal masking sets future token attention weights to -infinity before softmax, ensuring predictions for position i can depend only on known outputs at positions less than i.",
+        "retrievalScore": 0.86,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-01-c2",
+        "documentId": "doc-nn",
+        "source": "bert-architectures.pdf",
+        "pageNumber": 3,
+        "section": "BERT Token Masking",
+        "text": "In masked language modeling, 15% of input tokens are masked with a special [MASK] symbol so that bidirectional context can be used to predict the masked vocabulary targets.",
+        "retrievalScore": 0.84,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-01-c3",
+        "documentId": "doc-nn",
+        "source": "regularization-methods.pdf",
+        "pageNumber": 2,
+        "section": "Dropout Regularization",
+        "text": "Dropout randomly deactivates neurons during forward passes with probability p, preventing co-adaptation of feature detectors.",
+        "retrievalScore": 0.75,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-01-c4",
+        "documentId": "doc-nn",
+        "source": "computer-vision.pdf",
+        "pageNumber": 5,
+        "section": "Semantic Segmentation",
+        "text": "Binary mask prediction classifies every image pixel into foreground or background classes for instance segmentation.",
+        "retrievalScore": 0.68,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-ambig-02",
+    "category": "AMBIGUOUS",
+    "query": "How does transaction isolation affect database concurrency?",
+    "description": "Ambiguous query touching on dirty reads, non-repeatable reads, and serializable isolation trade-offs.",
+    "relevantChunkIds": [
+      "ambig-02-c1",
+      "ambig-02-c2"
+    ],
+    "referenceAnswer": "Higher isolation levels prevent concurrency anomalies like dirty reads and phantom rows by taking stricter locks, but reduce throughput; lower levels increase concurrency at the cost of consistency anomalies.",
+    "answerable": true,
+    "requiredFacts": [
+      "dirty read",
+      "serializable",
+      "transaction"
+    ],
+    "candidateChunks": [
+      {
+        "id": "ambig-02-c1",
+        "documentId": "doc-db",
+        "source": "ansi-sql-isolation.pdf",
+        "pageNumber": 2,
+        "section": "Read Committed Isolation",
+        "text": "Read Committed prevents dirty reads by allowing transactions to read only committed data. However, non-repeatable reads and phantom reads remain possible.",
+        "retrievalScore": 0.87,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-02-c2",
+        "documentId": "doc-db",
+        "source": "ansi-sql-isolation.pdf",
+        "pageNumber": 4,
+        "section": "Serializable Isolation",
+        "text": "Serializable isolation provides the highest safety by eliminating all concurrency anomalies, but enforces strict serialized execution order which reduces transaction throughput under contention.",
+        "retrievalScore": 0.85,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-02-c3",
+        "documentId": "doc-hardware",
+        "source": "cpu-memory-barriers.pdf",
+        "pageNumber": 3,
+        "section": "Hardware Memory Barriers",
+        "text": "Memory fence instructions enforce ordering constraints on CPU memory operations, preventing compiler and hardware out-of-order execution.",
+        "retrievalScore": 0.72,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-02-c4",
+        "documentId": "doc-db",
+        "source": "ansi-sql-isolation.pdf",
+        "pageNumber": 6,
+        "section": "Database Indexing",
+        "text": "B-tree index lookups require traversing root and internal nodes with O(log N) page reads to locate target leaf keys.",
+        "retrievalScore": 0.64,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-ambig-03",
+    "category": "AMBIGUOUS",
+    "query": "What is the significance of the event horizon in physics?",
+    "description": "Ambiguous between black hole gravitational event horizon and cosmological event horizon.",
+    "relevantChunkIds": [
+      "ambig-03-c1"
+    ],
+    "referenceAnswer": "In general relativity, the event horizon is the boundary around a black hole beyond which gravitational pull is so strong that neither matter nor light can escape.",
+    "answerable": true,
+    "requiredFacts": [
+      "black hole",
+      "escape",
+      "light"
+    ],
+    "candidateChunks": [
+      {
+        "id": "ambig-03-c1",
+        "documentId": "doc-relativity",
+        "source": "general-relativity-astrophysics.pdf",
+        "pageNumber": 5,
+        "section": "Black Hole Event Horizon",
+        "text": "The Schwarzschild event horizon marks the boundary of spacetime around a black hole where the escape velocity equals the speed of light, preventing any signals or particles from escaping.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-03-c2",
+        "documentId": "doc-relativity",
+        "source": "cosmology-expansion.pdf",
+        "pageNumber": 3,
+        "section": "Cosmological Horizon",
+        "text": "The cosmological particle horizon represents the maximum distance from which particles could have traveled to the observer in the age of the universe.",
+        "retrievalScore": 0.79,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-03-c3",
+        "documentId": "doc-relativity",
+        "source": "general-relativity-astrophysics.pdf",
+        "pageNumber": 7,
+        "section": "Accretion Disks",
+        "text": "Gas in the accretion disk around a compact object heats to millions of Kelvin due to frictional forces, emitting copious X-ray radiation.",
+        "retrievalScore": 0.71,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-03-c4",
+        "documentId": "doc-relativity",
+        "source": "general-relativity-astrophysics.pdf",
+        "pageNumber": 2,
+        "section": "Gravitational Lensing",
+        "text": "Massive galaxies bend spacetime around them, acting as gravitational lenses that distort and magnify background galaxy images.",
+        "retrievalScore": 0.65,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-ambig-04",
+    "category": "AMBIGUOUS",
+    "query": "What does batch normalization do during training?",
+    "description": "Differentiates mini-batch normalization operations from batch gradient descent.",
+    "relevantChunkIds": [
+      "ambig-04-c1"
+    ],
+    "referenceAnswer": "Batch normalization calculates the mean and variance across each mini-batch during training to standardize layer activations, followed by learnable scaling and shifting.",
+    "answerable": true,
+    "requiredFacts": [
+      "mean",
+      "variance",
+      "mini-batch"
+    ],
+    "candidateChunks": [
+      {
+        "id": "ambig-04-c1",
+        "documentId": "doc-deep-learning",
+        "source": "batch-norm-paper.pdf",
+        "pageNumber": 3,
+        "section": "Batch Normalization",
+        "text": "Batch normalization standardizes activations across each mini-batch to zero mean and unit variance, followed by affine transformation using learnable gamma and beta parameters.",
+        "retrievalScore": 0.9,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-04-c2",
+        "documentId": "doc-deep-learning",
+        "source": "optimization-methods.pdf",
+        "pageNumber": 2,
+        "section": "Mini-batch Gradient Descent",
+        "text": "Mini-batch gradient descent computes parameter updates over small batches of training examples (e.g., 32 or 64) rather than the entire dataset.",
+        "retrievalScore": 0.83,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-04-c3",
+        "documentId": "doc-deep-learning",
+        "source": "batch-norm-paper.pdf",
+        "pageNumber": 5,
+        "section": "Layer Normalization",
+        "text": "Layer normalization computes statistics across all hidden units within the same layer for an individual training case, making it suitable for recurrent networks.",
+        "retrievalScore": 0.77,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "ambig-04-c4",
+        "documentId": "doc-deep-learning",
+        "source": "optimization-methods.pdf",
+        "pageNumber": 6,
+        "section": "Weight Decay",
+        "text": "L2 weight decay penalizes the squared magnitude of weights in the loss function, encouraging smaller parameter norms.",
+        "retrievalScore": 0.63,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-part-01",
+    "category": "PARTIAL_CONTEXT",
+    "query": "What were the birth years and discoveries of both James Watson and Francis Crick?",
+    "description": "Passage contains Watson's birth year and their joint 1953 DNA discovery, but Francis Crick's birth year is missing.",
+    "relevantChunkIds": [
+      "part-01-c1"
+    ],
+    "referenceAnswer": "James Watson (born 1928) and Francis Crick discovered the double-helix structure of DNA in 1953, but Francis Crick's birth year is not mentioned in the context.",
+    "answerable": true,
+    "requiredFacts": [
+      "1953",
+      "dna",
+      "not mentioned"
+    ],
+    "candidateChunks": [
+      {
+        "id": "part-01-c1",
+        "documentId": "doc-dna",
+        "source": "molecular-structure-of-nucleic-acids.pdf",
+        "pageNumber": 1,
+        "section": "Discovery of DNA Structure",
+        "text": "In April 1953, James Watson (born 1928) and Francis Crick published the double-helix structure of DNA at the Cavendish Laboratory in Cambridge based on Rosalind Franklin's X-ray diffraction Photo 51.",
+        "retrievalScore": 0.89,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "part-01-c2",
+        "documentId": "doc-dna",
+        "source": "molecular-structure-of-nucleic-acids.pdf",
+        "pageNumber": 2,
+        "section": "Franklin Contributions",
+        "text": "Rosalind Franklin was born in 1920 in London and produced crucial high-resolution X-ray crystallographic images of DNA fibers in the B-conformation.",
+        "retrievalScore": 0.78,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "part-01-c3",
+        "documentId": "doc-dna",
+        "source": "molecular-structure-of-nucleic-acids.pdf",
+        "pageNumber": 4,
+        "section": "Base Pairing",
+        "text": "Specific base pairing between adenine-thymine and guanine-cytosine accounted for Chargaff's rules of 1:1 purine-to-pyrimidine stoichiometric ratios.",
+        "retrievalScore": 0.72,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "part-01-c4",
+        "documentId": "doc-dna",
+        "source": "molecular-structure-of-nucleic-acids.pdf",
+        "pageNumber": 5,
+        "section": "Nobel Prize",
+        "text": "The Nobel Prize in Physiology or Medicine was awarded in 1962 to Watson, Crick, and Maurice Wilkins for their discoveries concerning the molecular structure of nucleic acids.",
+        "retrievalScore": 0.65,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-part-02",
+    "category": "PARTIAL_CONTEXT",
+    "query": "What were the launch date, payload mass, and destination coordinates of the Voyager 1 mission?",
+    "description": "Launch date and scientific instruments are described, but exact payload mass and destination coordinates are missing.",
+    "relevantChunkIds": [
+      "part-02-c1"
+    ],
+    "referenceAnswer": "Voyager 1 was launched on September 5, 1977, but its exact payload mass and destination coordinates are not provided in the context.",
+    "answerable": true,
+    "requiredFacts": [
+      "september 5",
+      "1977",
+      "not provided"
+    ],
+    "candidateChunks": [
+      {
+        "id": "part-02-c1",
+        "documentId": "doc-space",
+        "source": "voyager-mission-profile.pdf",
+        "pageNumber": 2,
+        "section": "Voyager 1 Launch",
+        "text": "Voyager 1 was launched by NASA on September 5, 1977 from Cape Canaveral aboard a Titan IIIE-Centaur rocket to explore Jupiter and Saturn before traveling into interstellar space.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "part-02-c2",
+        "documentId": "doc-space",
+        "source": "voyager-mission-profile.pdf",
+        "pageNumber": 3,
+        "section": "Voyager 2",
+        "text": "Voyager 2 was launched slightly earlier on August 20, 1977, following a trajectory that allowed flybys of Uranus and Neptune in addition to Jupiter and Saturn.",
+        "retrievalScore": 0.81,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "part-02-c3",
+        "documentId": "doc-space",
+        "source": "voyager-mission-profile.pdf",
+        "pageNumber": 5,
+        "section": "Golden Record",
+        "text": "Each Voyager spacecraft carries a gold-plated copper phonograph record containing sounds and images selected to portray the diversity of life on Earth.",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "part-02-c4",
+        "documentId": "doc-space",
+        "source": "voyager-mission-profile.pdf",
+        "pageNumber": 7,
+        "section": "Interstellar Boundary",
+        "text": "In August 2012, Voyager 1 crossed the heliopause into interstellar space at approximately 121 astronomical units from the Sun.",
+        "retrievalScore": 0.67,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-part-03",
+    "category": "PARTIAL_CONTEXT",
+    "query": "What are the maximum cruise speeds of both the Boeing 747 and Airbus A380?",
+    "description": "Contains Boeing 747 cruise speed (Mach 0.855), but only mentions Airbus A380 passenger capacity without its speed.",
+    "relevantChunkIds": [
+      "part-03-c1",
+      "part-03-c2"
+    ],
+    "referenceAnswer": "The Boeing 747 has a maximum cruise speed of Mach 0.855, but the maximum cruise speed of the Airbus A380 is not mentioned in the context.",
+    "answerable": true,
+    "requiredFacts": [
+      "boeing",
+      "0.85",
+      "not mentioned"
+    ],
+    "candidateChunks": [
+      {
+        "id": "part-03-c1",
+        "documentId": "doc-aviation",
+        "source": "commercial-jet-specifications.pdf",
+        "pageNumber": 3,
+        "section": "Boeing 747 Specs",
+        "text": "The Boeing 747-400 widebody aircraft has a maximum cruise speed of Mach 0.855 (approx 912 km/h) and a range of 13,450 kilometers.",
+        "retrievalScore": 0.88,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "part-03-c2",
+        "documentId": "doc-aviation",
+        "source": "commercial-jet-specifications.pdf",
+        "pageNumber": 5,
+        "section": "Airbus A380 Overview",
+        "text": "The Airbus A380 is a double-deck widebody airliner capable of carrying 525 to 853 passengers across its full-length upper and lower decks.",
+        "retrievalScore": 0.85,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "part-03-c3",
+        "documentId": "doc-aviation",
+        "source": "commercial-jet-specifications.pdf",
+        "pageNumber": 1,
+        "section": "Concorde History",
+        "text": "The Concorde supersonic transport cruised at Mach 2.04 with a maximum takeoff weight of 185 tonnes.",
+        "retrievalScore": 0.73,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "part-03-c4",
+        "documentId": "doc-aviation",
+        "source": "commercial-jet-specifications.pdf",
+        "pageNumber": 7,
+        "section": "Boeing 777 Range",
+        "text": "The Boeing 777-200LR set a world record for the longest non-stop commercial airliner flight, covering 21,601 km in 22 hours and 42 minutes.",
+        "retrievalScore": 0.66,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-part-04",
+    "category": "PARTIAL_CONTEXT",
+    "query": "What are the boiling point and freezing point of ethanol at 1 atmosphere?",
+    "description": "Contains boiling point (78.37°C), but freezing point is omitted.",
+    "relevantChunkIds": [
+      "part-04-c1"
+    ],
+    "referenceAnswer": "Ethanol has a boiling point of 78.37°C at 1 atmosphere, but its freezing point is not mentioned in the provided context.",
+    "answerable": true,
+    "requiredFacts": [
+      "78",
+      "boiling",
+      "freezing"
+    ],
+    "candidateChunks": [
+      {
+        "id": "part-04-c1",
+        "documentId": "doc-chem",
+        "source": "organic-solvents-handbook.pdf",
+        "pageNumber": 2,
+        "section": "Ethanol Physical Properties",
+        "text": "Ethanol (C2H5OH) is a volatile, colorless liquid with a pleasant odor. At standard atmospheric pressure (1 atm), its boiling point is 78.37°C and its density is 0.789 g/cm3.",
+        "retrievalScore": 0.9,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "part-04-c2",
+        "documentId": "doc-chem",
+        "source": "organic-solvents-handbook.pdf",
+        "pageNumber": 4,
+        "section": "Methanol Properties",
+        "text": "Methanol has a boiling point of 64.7°C and freezes at -97.6°C. It is highly toxic when ingested or inhaled.",
+        "retrievalScore": 0.79,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "part-04-c3",
+        "documentId": "doc-chem",
+        "source": "organic-solvents-handbook.pdf",
+        "pageNumber": 1,
+        "section": "Water Solvent",
+        "text": "Water has a boiling point of 100°C and a freezing point of 0°C under 1 atmosphere.",
+        "retrievalScore": 0.71,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "part-04-c4",
+        "documentId": "doc-chem",
+        "source": "organic-solvents-handbook.pdf",
+        "pageNumber": 6,
+        "section": "Acetone Properties",
+        "text": "Acetone boils at 56.05°C and is widely miscible with water, ethanol, and diethyl ether.",
+        "retrievalScore": 0.63,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-noans-01",
+    "category": "NO_ANSWER",
+    "query": "What was the name of the first cat in space and when did she return to Earth?",
+    "description": "Context contains passages about space missions with dogs, chimps, and humans, but zero information about Felicette the cat.",
+    "relevantChunkIds": [],
+    "referenceAnswer": "The provided context does not contain information about the first cat in space or its mission.",
+    "answerable": false,
+    "requiredFacts": [],
+    "candidateChunks": [
+      {
+        "id": "noans-01-c1",
+        "documentId": "doc-space-animals",
+        "source": "animals-in-space-history.pdf",
+        "pageNumber": 1,
+        "section": "Laika on Sputnik 2",
+        "text": "Laika, a Soviet stray dog, became the first animal to orbit the Earth aboard Sputnik 2 on November 3, 1957. The mission proved that a living organism could survive the launch into orbit.",
+        "retrievalScore": 0.79,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-01-c2",
+        "documentId": "doc-space-animals",
+        "source": "animals-in-space-history.pdf",
+        "pageNumber": 3,
+        "section": "Ham the Chimp",
+        "text": "Ham the Chimp was launched aboard Mercury-Redstone 2 on January 31, 1961. He successfully performed cognitive tasks during his 16-minute sub-orbital flight.",
+        "retrievalScore": 0.75,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-01-c3",
+        "documentId": "doc-space-animals",
+        "source": "animals-in-space-history.pdf",
+        "pageNumber": 5,
+        "section": "Apollo 11 Crew",
+        "text": "The Apollo 11 mission crew consisted of commander Neil Armstrong, command module pilot Michael Collins, and lunar module pilot Edwin Buzz Aldrin.",
+        "retrievalScore": 0.7,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-01-c4",
+        "documentId": "doc-space-animals",
+        "source": "animals-in-space-history.pdf",
+        "pageNumber": 7,
+        "section": "ISS Rodent Research",
+        "text": "Modern research on the International Space Station includes Rodent Research investigations studying muscle atrophy and bone density loss in microgravity.",
+        "retrievalScore": 0.64,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-noans-02",
+    "category": "NO_ANSWER",
+    "query": "What was the capital city of Atlantis according to Plato's Dialogues?",
+    "description": "Context contains passages on Athens, Sparta, Rome, and Alexandria, with zero mention of Atlantis.",
+    "relevantChunkIds": [],
+    "referenceAnswer": "The provided context does not contain information regarding Atlantis or Plato's description of its capital.",
+    "answerable": false,
+    "requiredFacts": [],
+    "candidateChunks": [
+      {
+        "id": "noans-02-c1",
+        "documentId": "doc-ancient-history",
+        "source": "classical-mediterranean-cities.pdf",
+        "pageNumber": 2,
+        "section": "Ancient Athens",
+        "text": "Classical Athens was the dominant city-state of Attica, renowned for developing democratic governance, tragic theatre, and the Parthenon temple under Pericles.",
+        "retrievalScore": 0.78,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-02-c2",
+        "documentId": "doc-ancient-history",
+        "source": "classical-mediterranean-cities.pdf",
+        "pageNumber": 4,
+        "section": "Spartan Hegemony",
+        "text": "Sparta was the principal military power on the Peloponnesian peninsula, governed by a dual monarchy and the Gerousia council of elders.",
+        "retrievalScore": 0.74,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-02-c3",
+        "documentId": "doc-ancient-history",
+        "source": "classical-mediterranean-cities.pdf",
+        "pageNumber": 6,
+        "section": "Roman Senate",
+        "text": "The Roman Senate was a political institution in ancient Rome that functioned as an advisory council for consuls and later the emperor.",
+        "retrievalScore": 0.69,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-02-c4",
+        "documentId": "doc-ancient-history",
+        "source": "classical-mediterranean-cities.pdf",
+        "pageNumber": 8,
+        "section": "Library of Alexandria",
+        "text": "The Great Library of Alexandria in Ptolemaic Egypt was part of a larger research institution called the Mouseion dedicated to the Muses.",
+        "retrievalScore": 0.62,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-noans-03",
+    "category": "NO_ANSWER",
+    "query": "What is the secret chemical formula and preservative recipe of Coca-Cola?",
+    "description": "Context discusses carbonation physics, coffee extraction, and tea tannins, with zero mention of Coca-Cola's recipe.",
+    "relevantChunkIds": [],
+    "referenceAnswer": "The provided context contains no information about Coca-Cola's chemical formula or recipe preservatives.",
+    "answerable": false,
+    "requiredFacts": [],
+    "candidateChunks": [
+      {
+        "id": "noans-03-c1",
+        "documentId": "doc-beverages",
+        "source": "carbonation-physics.pdf",
+        "pageNumber": 1,
+        "section": "Henry's Law",
+        "text": "Carbonation in soft drinks relies on Henry's law: at constant temperature, the amount of dissolved CO2 gas in liquid is proportional to its partial pressure.",
+        "retrievalScore": 0.76,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-03-c2",
+        "documentId": "doc-beverages",
+        "source": "coffee-science.pdf",
+        "pageNumber": 3,
+        "section": "Espresso Extraction",
+        "text": "Espresso brewing forces 9 bars of heated water through finely ground coffee cake in 25 to 30 seconds to emulsify aromatic oils into crema.",
+        "retrievalScore": 0.72,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-03-c3",
+        "documentId": "doc-beverages",
+        "source": "tea-processing.pdf",
+        "pageNumber": 2,
+        "section": "Black Tea Oxidation",
+        "text": "Camellia sinensis leaves undergo enzymatic oxidation where polyphenol oxidase converts catechins into theaflavins and thearubigins.",
+        "retrievalScore": 0.68,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-03-c4",
+        "documentId": "doc-beverages",
+        "source": "carbonation-physics.pdf",
+        "pageNumber": 4,
+        "section": "Sugar Crystallization",
+        "text": "Supersaturated sucrose solutions undergo spontaneous crystal nucleation when agitated or cooled below critical solubility limits.",
+        "retrievalScore": 0.63,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-noans-04",
+    "category": "NO_ANSWER",
+    "query": "How many natural moons does exoplanet Proxima Centauri b possess?",
+    "description": "Context discusses Solar System moons (Jupiter, Saturn, Mars), with no data on exoplanetary moons of Proxima b.",
+    "relevantChunkIds": [],
+    "referenceAnswer": "The provided context contains no information regarding exoplanet Proxima Centauri b or any moons it may possess.",
+    "answerable": false,
+    "requiredFacts": [],
+    "candidateChunks": [
+      {
+        "id": "noans-04-c1",
+        "documentId": "doc-planetary",
+        "source": "solar-system-satellites.pdf",
+        "pageNumber": 3,
+        "section": "Galilean Moons",
+        "text": "Jupiter possesses four large Galilean moons discovered in 1610: Io, Europa, Ganymede, and Callisto. Ganymede is the largest moon in the Solar System.",
+        "retrievalScore": 0.78,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-04-c2",
+        "documentId": "doc-planetary",
+        "source": "solar-system-satellites.pdf",
+        "pageNumber": 5,
+        "section": "Titan and Enceladus",
+        "text": "Saturn's moon Titan has a dense nitrogen atmosphere and liquid hydrocarbon lakes, while Enceladus erupts cryovolcanic water vapor geysers.",
+        "retrievalScore": 0.73,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-04-c3",
+        "documentId": "doc-planetary",
+        "source": "solar-system-satellites.pdf",
+        "pageNumber": 2,
+        "section": "Mars Moons",
+        "text": "Mars is orbited by two small irregularly shaped natural satellites, Phobos and Deimos, which are thought to be captured asteroids.",
+        "retrievalScore": 0.69,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "noans-04-c4",
+        "documentId": "doc-planetary",
+        "source": "solar-system-satellites.pdf",
+        "pageNumber": 1,
+        "section": "Earth Moon",
+        "text": "Earth's Moon is in synchronous tidal rotation, always presenting the same face toward Earth with an orbital period of 27.3 days.",
+        "retrievalScore": 0.61,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-single-01",
+    "category": "SINGLE_RELEVANT",
+    "query": "What algorithm replaces standard matrix materialization in FlashAttention to achieve IO-awareness?",
+    "description": "Exactly one highly technical chunk detailing SRAM tiling and online softmax recomputation.",
+    "relevantChunkIds": [
+      "single-01-c1"
+    ],
+    "referenceAnswer": "FlashAttention uses tiling to load blocks from slow HBM into fast SRAM, computing softmax incrementally with online softmax recomputation without materializing the N x N attention matrix.",
+    "answerable": true,
+    "requiredFacts": [
+      "tiling",
+      "sram",
+      "online softmax"
+    ],
+    "candidateChunks": [
+      {
+        "id": "single-01-c1",
+        "documentId": "doc-flash-attn",
+        "source": "flashattention-paper.pdf",
+        "pageNumber": 3,
+        "section": "Algorithm 1: FlashAttention",
+        "text": "FlashAttention uses tiling to load blocks of keys, queries, and values from GPU High Bandwidth Memory (HBM) into on-chip SRAM, computing scaled dot-product attention with online softmax recomputation without materializing the full N x N matrix.",
+        "retrievalScore": 0.93,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "single-01-c2",
+        "documentId": "doc-flash-attn",
+        "source": "flashattention-paper.pdf",
+        "pageNumber": 1,
+        "section": "Introduction",
+        "text": "Transformers have become the ubiquitous architecture for natural language processing, but their quadratic time and memory complexity in sequence length presents a computational bottleneck.",
+        "retrievalScore": 0.81,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "single-01-c3",
+        "documentId": "doc-flash-attn",
+        "source": "sparse-transformers.pdf",
+        "pageNumber": 2,
+        "section": "Sparse Attention",
+        "text": "Sparse Transformer approximations restrict token attention to fixed stride patterns, lowering computational complexity to O(N sqrt(N)).",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "single-01-c4",
+        "documentId": "doc-flash-attn",
+        "source": "kernel-fusion.pdf",
+        "pageNumber": 4,
+        "section": "CUDA Kernel Fusion",
+        "text": "Kernel fusion combines pointwise activation operations into a single GPU invocation to eliminate intermediate global memory round-trips.",
+        "retrievalScore": 0.68,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "single-01-c5",
+        "documentId": "doc-flash-attn",
+        "source": "transformer-benchmarks.pdf",
+        "pageNumber": 6,
+        "section": "BERT Benchmarking",
+        "text": "Benchmarking BERT-Large training speedups demonstrates an 8x reduction in wall-clock time when utilizing mixed-precision FP16 Tensor Cores.",
+        "retrievalScore": 0.6,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-single-02",
+    "category": "SINGLE_RELEVANT",
+    "query": "What is the critical temperature below which mercury exhibits superconductivity?",
+    "description": "One historical physics passage on Heike Kamerlingh Onnes finding mercury superconductivity at 4.2 K.",
+    "relevantChunkIds": [
+      "single-02-c1"
+    ],
+    "referenceAnswer": "Mercury becomes superconducting at a critical transition temperature of 4.2 Kelvin, discovered by Heike Kamerlingh Onnes in 1911.",
+    "answerable": true,
+    "requiredFacts": [
+      "4.2",
+      "kelvin",
+      "onnes"
+    ],
+    "candidateChunks": [
+      {
+        "id": "single-02-c1",
+        "documentId": "doc-physics",
+        "source": "superconductivity-history.pdf",
+        "pageNumber": 2,
+        "section": "Discovery of Superconductivity",
+        "text": "In 1911, Dutch physicist Heike Kamerlingh Onnes discovered that the electrical resistance of solid mercury abruptly dropped to zero when cooled with liquid helium below a critical temperature of 4.2 Kelvin.",
+        "retrievalScore": 0.92,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "single-02-c2",
+        "documentId": "doc-physics",
+        "source": "semiconductor-physics.pdf",
+        "pageNumber": 4,
+        "section": "Silicon Bandgap",
+        "text": "Silicon is an indirect bandgap semiconductor with a fundamental bandgap of approximately 1.12 electron-volts at room temperature (300 K).",
+        "retrievalScore": 0.78,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "single-02-c3",
+        "documentId": "doc-physics",
+        "source": "electrical-conductors.pdf",
+        "pageNumber": 1,
+        "section": "Ohm's Law",
+        "text": "Ohm's law states that current through a conductor between two points is directly proportional to voltage across the points, with proportionality constant resistance R.",
+        "retrievalScore": 0.72,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "single-02-c4",
+        "documentId": "doc-physics",
+        "source": "superconductivity-history.pdf",
+        "pageNumber": 6,
+        "section": "BCS Theory",
+        "text": "Bardeen, Cooper, and Schrieffer proposed in 1957 that superconductivity arises from Cooper pairs of electrons bound together by electron-phonon interactions.",
+        "retrievalScore": 0.69,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "single-02-c5",
+        "documentId": "doc-physics",
+        "source": "electrical-conductors.pdf",
+        "pageNumber": 5,
+        "section": "Copper Resistivity",
+        "text": "Copper exhibits electrical resistivity of 1.68 x 10^-8 ohm-meters at 20°C, making it the standard material for electrical wiring.",
+        "retrievalScore": 0.61,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-single-03",
+    "category": "SINGLE_RELEVANT",
+    "query": "What chemical ester compound gives ripe bananas their characteristic aroma?",
+    "description": "One precise chemistry chunk mentioning isoamyl acetate surrounded by general fruit/botany passages.",
+    "relevantChunkIds": [
+      "single-03-c1"
+    ],
+    "referenceAnswer": "Isoamyl acetate (isopentyl acetate) is the chemical ester responsible for the distinctive aroma and flavor of ripe bananas.",
+    "answerable": true,
+    "requiredFacts": [
+      "isoamyl acetate"
+    ],
+    "candidateChunks": [
+      {
+        "id": "single-03-c1",
+        "documentId": "doc-flavor",
+        "source": "organic-flavor-chemistry.pdf",
+        "pageNumber": 4,
+        "section": "Fruit Esters",
+        "text": "Isoamyl acetate (also known as isopentyl acetate) is a carboxylic ester formed from isoamyl alcohol and acetic acid that imparts the strong, characteristic aroma of ripe bananas.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "single-03-c2",
+        "documentId": "doc-flavor",
+        "source": "fruit-ripening-biology.pdf",
+        "pageNumber": 2,
+        "section": "Ethylene Gas",
+        "text": "Ethylene gas (C2H4) is a natural plant hormone that triggers climacteric ripening, stimulating pectinase enzymes that soften cellular wall structures.",
+        "retrievalScore": 0.82,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "single-03-c3",
+        "documentId": "doc-flavor",
+        "source": "banana-nutrition.pdf",
+        "pageNumber": 1,
+        "section": "Banana Nutrition",
+        "text": "A medium banana contains approximately 400 mg of potassium, 3 grams of dietary fiber, and significant levels of vitamin B6 and vitamin C.",
+        "retrievalScore": 0.75,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "single-03-c4",
+        "documentId": "doc-flavor",
+        "source": "organic-flavor-chemistry.pdf",
+        "pageNumber": 7,
+        "section": "Ethyl Butyrate",
+        "text": "Ethyl butyrate is an ester with an odor resembling pineapple, commonly added to processed fruit juices to restore fresh top-notes.",
+        "retrievalScore": 0.69,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "single-03-c5",
+        "documentId": "doc-flavor",
+        "source": "fruit-ripening-biology.pdf",
+        "pageNumber": 5,
+        "section": "Starch Conversion",
+        "text": "During ripening, amylase enzymes break complex starch macromolecules into sucrose, glucose, and fructose sugars, increasing sweetness.",
+        "retrievalScore": 0.63,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-single-04",
+    "category": "SINGLE_RELEVANT",
+    "query": "Which cryptographic hash function was traditionally used to identify Git objects?",
+    "description": "One targeted chunk on Git using 160-bit SHA-1 hashes.",
+    "relevantChunkIds": [
+      "single-04-c1"
+    ],
+    "referenceAnswer": "Git traditionally identifies objects (blobs, trees, commits, tags) using 160-bit SHA-1 cryptographic checksum hashes.",
+    "answerable": true,
+    "requiredFacts": [
+      "sha-1",
+      "160"
+    ],
+    "candidateChunks": [
+      {
+        "id": "single-04-c1",
+        "documentId": "doc-vcs",
+        "source": "git-internals-handbook.pdf",
+        "pageNumber": 2,
+        "section": "Git Object Model",
+        "text": "Git is a content-addressable database. Every object (blob, tree, commit, or tag) is addressed by its 40-character hexadecimal string representing a 160-bit SHA-1 cryptographic hash of its payload.",
+        "retrievalScore": 0.92,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "single-04-c2",
+        "documentId": "doc-vcs",
+        "source": "git-internals-handbook.pdf",
+        "pageNumber": 4,
+        "section": "Packfiles",
+        "text": "To save disk space, Git compresses loose objects into packfiles (.pack) using delta compression, paired with index files (.idx) for rapid offsets.",
+        "retrievalScore": 0.8,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "single-04-c3",
+        "documentId": "doc-vcs",
+        "source": "git-internals-handbook.pdf",
+        "pageNumber": 6,
+        "section": "References",
+        "text": "Git references are simple pointers stored in .git/refs that contain 40-byte commit hashes pointing to the tip of branches or tags.",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "single-04-c4",
+        "documentId": "doc-vcs",
+        "source": "hash-functions.pdf",
+        "pageNumber": 3,
+        "section": "MD5 Security",
+        "text": "MD5 produces a 128-bit hash value, but is no longer cryptographically collision-resistant following practical collision demonstrations in 2004.",
+        "retrievalScore": 0.68,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "single-04-c5",
+        "documentId": "doc-vcs",
+        "source": "git-internals-handbook.pdf",
+        "pageNumber": 8,
+        "section": "Working Tree",
+        "text": "The staging area (index) is a binary file (.git/index) holding tracked file path entries, permissions, and SHA-1 hashes prior to committing.",
+        "retrievalScore": 0.61,
+        "rank": 5,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-conf-01",
+    "category": "CONFLICTING_CONTEXT",
+    "query": "What was the estimated peak population of ancient Rome during the Pax Romana?",
+    "description": "Contains two conflicting historical passages: one citing 1 million residents, another citing a conservative 450,000 residents.",
+    "relevantChunkIds": [
+      "conf-01-c1",
+      "conf-01-c2"
+    ],
+    "referenceAnswer": "Estimates for ancient Rome's peak population conflict: standard demographic estimates propose approximately 1 million inhabitants based on grain distributions, while revisionist scholars estimate a lower peak of around 450,000 residents.",
+    "answerable": true,
+    "requiredFacts": [
+      "1 million",
+      "450 000",
+      "estimate"
+    ],
+    "candidateChunks": [
+      {
+        "id": "conf-01-c1",
+        "documentId": "doc-rome",
+        "source": "roman-demography-study.pdf",
+        "pageNumber": 3,
+        "section": "High Population Hypothesis",
+        "text": "Based on records of Augustus's grain distributions (annona) to adult male citizens, traditional historians calculate that Rome reached an estimated peak population of 1 million inhabitants during the second century CE.",
+        "retrievalScore": 0.89,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-01-c2",
+        "documentId": "doc-rome",
+        "source": "urban-archaeology-rome.pdf",
+        "pageNumber": 7,
+        "section": "Low Population Hypothesis",
+        "text": "Recent spatial archaeological excavations of housing density within the Servian walls suggest residential capacity was severely constrained, pointing to a conservative peak population of around 450,000 residents.",
+        "retrievalScore": 0.87,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-01-c3",
+        "documentId": "doc-rome",
+        "source": "roman-demography-study.pdf",
+        "pageNumber": 5,
+        "section": "Aqueduct Systems",
+        "text": "Eleven aqueducts supplied Rome with water, delivering an estimated 1 million cubic meters of fresh mountain spring water daily to public baths and fountains.",
+        "retrievalScore": 0.72,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-01-c4",
+        "documentId": "doc-rome",
+        "source": "urban-archaeology-rome.pdf",
+        "pageNumber": 2,
+        "section": "Ostia Harbor",
+        "text": "The port city of Ostia Antica served as Rome's maritime commercial gateway, receiving grain fleets from Sicily and Alexandria.",
+        "retrievalScore": 0.65,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-conf-02",
+    "category": "CONFLICTING_CONTEXT",
+    "query": "Is dietary saturated fat directly causal to coronary heart disease according to clinical studies?",
+    "description": "Contains conflicting medical evidence: traditional AHA dietary hypothesis vs recent meta-analyses showing no direct mortality link.",
+    "relevantChunkIds": [
+      "conf-02-c1",
+      "conf-02-c2"
+    ],
+    "referenceAnswer": "Clinical evidence is conflicting: traditional cardiological guidelines state saturated fat causes coronary heart disease by raising LDL cholesterol, whereas comprehensive meta-analyses found no statistically significant association between saturated fat intake and cardiovascular mortality.",
+    "answerable": true,
+    "requiredFacts": [
+      "meta-analysis",
+      "ldl",
+      "conflicting"
+    ],
+    "candidateChunks": [
+      {
+        "id": "conf-02-c1",
+        "documentId": "doc-nutrition",
+        "source": "diet-heart-guidelines.pdf",
+        "pageNumber": 3,
+        "section": "Diet-Heart Hypothesis",
+        "text": "The American Heart Association guidelines state that dietary saturated fat intake elevates low-density lipoprotein (LDL) cholesterol, acting as a primary causal driver of atherosclerosis and coronary heart disease.",
+        "retrievalScore": 0.88,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-02-c2",
+        "documentId": "doc-nutrition",
+        "source": "annals-internal-medicine-review.pdf",
+        "pageNumber": 6,
+        "section": "Systematic Meta-Analysis",
+        "text": "A large systematic review and meta-analysis published in Annals of Internal Medicine found no significant evidence that saturated fat consumption increases cardiovascular disease risk or all-cause mortality.",
+        "retrievalScore": 0.86,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-02-c3",
+        "documentId": "doc-nutrition",
+        "source": "diet-heart-guidelines.pdf",
+        "pageNumber": 1,
+        "section": "Trans Fats",
+        "text": "Artificial trans-fatty acids produced by industrial hydrogenation significantly increase LDL while reducing protective HDL, and are universally recognized as hazardous.",
+        "retrievalScore": 0.73,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-02-c4",
+        "documentId": "doc-nutrition",
+        "source": "annals-internal-medicine-review.pdf",
+        "pageNumber": 2,
+        "section": "Triglycerides",
+        "text": "Elevated fasting serum triglycerides above 150 mg/dL indicate metabolic dysregulation and are frequently correlated with insulin resistance.",
+        "retrievalScore": 0.64,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-conf-03",
+    "category": "CONFLICTING_CONTEXT",
+    "query": "What year was the transistor invented at Bell Labs?",
+    "description": "One source dates the operational point-contact invention to December 1947; another cites the public announcement and patent filing in 1948.",
+    "relevantChunkIds": [
+      "conf-03-c1",
+      "conf-03-c2"
+    ],
+    "referenceAnswer": "The point-contact transistor was first constructed in December 1947 by Bardeen and Brattain, but was publicly announced and patent-filed in June 1948 by Bell Labs.",
+    "answerable": true,
+    "requiredFacts": [
+      "1947",
+      "1948",
+      "bell labs"
+    ],
+    "candidateChunks": [
+      {
+        "id": "conf-03-c1",
+        "documentId": "doc-electronics",
+        "source": "semiconductor-revolution.pdf",
+        "pageNumber": 2,
+        "section": "Lab Prototype 1947",
+        "text": "John Bardeen and Walter Brattain successfully operated the world's first working point-contact transistor on December 16, 1947, achieving signal amplification in their Bell Labs workbench experiment.",
+        "retrievalScore": 0.9,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-03-c2",
+        "documentId": "doc-electronics",
+        "source": "bell-labs-official-history.pdf",
+        "pageNumber": 5,
+        "section": "Public Announcement 1948",
+        "text": "Bell Telephone Laboratories kept the invention confidential until filing foundational patent applications and hosting their first official public press conference on June 30, 1948.",
+        "retrievalScore": 0.88,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-03-c3",
+        "documentId": "doc-electronics",
+        "source": "semiconductor-revolution.pdf",
+        "pageNumber": 6,
+        "section": "Bipolar Junction Transistor",
+        "text": "William Shockley developed the theory of the bipolar junction transistor (BJT) utilizing p-n-p layers in early 1948, replacing fragile surface point contacts.",
+        "retrievalScore": 0.74,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-03-c4",
+        "documentId": "doc-electronics",
+        "source": "vacuum-tube-history.pdf",
+        "pageNumber": 1,
+        "section": "Vacuum Tube Triode",
+        "text": "Lee de Forest patented the Audion vacuum tube triode in 1906, introducing a control grid to modulate thermionic electron current between cathode and anode.",
+        "retrievalScore": 0.66,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-conf-04",
+    "category": "CONFLICTING_CONTEXT",
+    "query": "What is the measured expansion rate (Hubble constant) of the universe?",
+    "description": "Hubble tension: CMB Planck satellite measurement of 67.4 km/s/Mpc vs local distance ladder measurement of 73.0 km/s/Mpc.",
+    "relevantChunkIds": [
+      "conf-04-c1",
+      "conf-04-c2"
+    ],
+    "referenceAnswer": "Cosmological measurements report conflicting values for the Hubble constant (Hubble tension): the Planck satellite measured 67.4 km/s/Mpc using the cosmic microwave background, whereas local Type Ia supernovae measurements yield 73.0 km/s/Mpc.",
+    "answerable": true,
+    "requiredFacts": [
+      "67",
+      "73",
+      "hubble tension"
+    ],
+    "candidateChunks": [
+      {
+        "id": "conf-04-c1",
+        "documentId": "doc-cosmology",
+        "source": "planck-cmb-results.pdf",
+        "pageNumber": 4,
+        "section": "Planck Satellite CMB",
+        "text": "The Planck collaboration measured the Hubble constant to be 67.4 +/- 0.5 km/s/Mpc by fitting temperature and polarization anisotropies of the early universe Cosmic Microwave Background to Lambda-CDM.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-04-c2",
+        "documentId": "doc-cosmology",
+        "source": "shoes-distance-ladder.pdf",
+        "pageNumber": 3,
+        "section": "SH0ES Cepheids Supernovae",
+        "text": "The SH0ES project determined the Hubble constant to be 73.04 +/- 1.04 km/s/Mpc using the cosmic distance ladder calibrated by Cepheid variable stars in galaxies hosting Type Ia supernovae.",
+        "retrievalScore": 0.89,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-04-c3",
+        "documentId": "doc-cosmology",
+        "source": "shoes-distance-ladder.pdf",
+        "pageNumber": 1,
+        "section": "Hubble-Lemaitre Law",
+        "text": "The Hubble-Lemaitre law states that the recessional velocity of distant galaxies is directly proportional to their proper distance from Earth: v = H_0 * d.",
+        "retrievalScore": 0.75,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "conf-04-c4",
+        "documentId": "doc-cosmology",
+        "source": "planck-cmb-results.pdf",
+        "pageNumber": 8,
+        "section": "Dark Energy Density",
+        "text": "The cosmological constant Lambda accounts for approximately 68.3% of the total energy density of the universe, causing accelerated expansion.",
+        "retrievalScore": 0.68,
+        "rank": 4,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-long-01",
+    "category": "LONG_CONTEXT",
+    "query": "What are the four primary control plane components of a Kubernetes cluster?",
+    "description": "8 candidates: 4 control plane components (kube-apiserver, etcd, kube-scheduler, kube-controller-manager) and 4 node/distractor components.",
+    "relevantChunkIds": [
+      "long-01-c1",
+      "long-01-c2",
+      "long-01-c3",
+      "long-01-c4"
+    ],
+    "referenceAnswer": "The four primary Kubernetes control plane components are: 1) kube-apiserver (REST gateway), 2) etcd (consistent key-value store), 3) kube-scheduler (assigns pods to nodes), and 4) kube-controller-manager (runs reconciliation loops).",
+    "answerable": true,
+    "requiredFacts": [
+      "kube-apiserver",
+      "etcd",
+      "kube-scheduler",
+      "controller-manager"
+    ],
+    "candidateChunks": [
+      {
+        "id": "long-01-c1",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 1,
+        "section": "kube-apiserver",
+        "text": "The kube-apiserver is the front-end REST gateway for the Kubernetes control plane. It validates and configures data for API objects including pods, services, and replication controllers.",
+        "retrievalScore": 0.92,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c2",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 2,
+        "section": "etcd Data Store",
+        "text": "etcd is a consistent and highly-available key-value backing store used as Kubernetes' backing store for all cluster data and state snapshots.",
+        "retrievalScore": 0.88,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c3",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 3,
+        "section": "kube-scheduler",
+        "text": "The kube-scheduler control plane component watches for newly created pods that have no assigned node, selecting an optimal node for them based on resource requests and constraints.",
+        "retrievalScore": 0.85,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c4",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 4,
+        "section": "kube-controller-manager",
+        "text": "The kube-controller-manager runs controller processes in a single binary, including node controllers, job controllers, endpoint controllers, and service account controllers.",
+        "retrievalScore": 0.82,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c5",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 6,
+        "section": "kubelet Worker",
+        "text": "The kubelet is an agent running on each worker node in the cluster, ensuring that containers described in PodSpecs are running and healthy.",
+        "retrievalScore": 0.75,
+        "rank": 5,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c6",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 7,
+        "section": "kube-proxy Networking",
+        "text": "kube-proxy is a network proxy that runs on each node, maintaining network rules on nodes using iptables or IPVS to allow network communication to pods.",
+        "retrievalScore": 0.7,
+        "rank": 6,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c7",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 8,
+        "section": "containerd Runtime",
+        "text": "containerd is an industry-standard container runtime managing complete container lifecycles including image transfer and execution.",
+        "retrievalScore": 0.65,
+        "rank": 7,
+        "decision": "pending"
+      },
+      {
+        "id": "long-01-c8",
+        "documentId": "doc-k8s",
+        "source": "kubernetes-internals.pdf",
+        "pageNumber": 9,
+        "section": "Ingress Controllers",
+        "text": "An Ingress controller is a specialized load balancer for cloud environments that accepts external HTTP/HTTPS traffic and routes it to backend services.",
+        "retrievalScore": 0.58,
+        "rank": 8,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-long-02",
+    "category": "LONG_CONTEXT",
+    "query": "What distinct phases compose the standard front-end and back-end compiler pipeline?",
+    "description": "8 candidates: 4 core phases (lexical analysis, syntax parsing, semantic analysis, code generation) and 4 system utilities/tools.",
+    "relevantChunkIds": [
+      "long-02-c1",
+      "long-02-c2",
+      "long-02-c3",
+      "long-02-c4"
+    ],
+    "referenceAnswer": "The compiler pipeline comprises: 1) Lexical analysis (token scanning), 2) Syntax parsing (AST generation), 3) Semantic analysis (type checking), and 4) Optimization and target code generation.",
+    "answerable": true,
+    "requiredFacts": [
+      "lexical",
+      "parsing",
+      "semantic",
+      "code generation"
+    ],
+    "candidateChunks": [
+      {
+        "id": "long-02-c1",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 2,
+        "section": "Lexical Analysis",
+        "text": "The lexical analyzer (scanner) reads source code characters and groups them into meaningful token sequences such as identifiers, keywords, and operators.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c2",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 3,
+        "section": "Syntax Analysis",
+        "text": "Syntax analysis (parsing) uses context-free grammars to convert tokens into a hierarchical parse tree or Abstract Syntax Tree (AST) representing grammatical structure.",
+        "retrievalScore": 0.87,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c3",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 4,
+        "section": "Semantic Analysis",
+        "text": "The semantic analyzer checks the syntax tree for semantic consistency against language definitions, performing static type checking and symbol table lookups.",
+        "retrievalScore": 0.84,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c4",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 7,
+        "section": "Code Generation",
+        "text": "The code generator maps intermediate representations into target machine code, performing register allocation and instruction scheduling.",
+        "retrievalScore": 0.81,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c5",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 10,
+        "section": "Linker Utilities",
+        "text": "The system linker resolves symbolic external references across multiple compiled object files, combining code and data sections into an executable binary.",
+        "retrievalScore": 0.72,
+        "rank": 5,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c6",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 11,
+        "section": "Program Loader",
+        "text": "The operating system loader copies executable instructions from storage into virtual memory pages, initializing registers and stack pointers.",
+        "retrievalScore": 0.66,
+        "rank": 6,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c7",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 12,
+        "section": "Profiling Tools",
+        "text": "Sampling profilers interrupt CPU execution periodically to gather call stack histograms, locating execution hotspots for manual optimization.",
+        "retrievalScore": 0.61,
+        "rank": 7,
+        "decision": "pending"
+      },
+      {
+        "id": "long-02-c8",
+        "documentId": "doc-compiler",
+        "source": "dragon-book-compilers.pdf",
+        "pageNumber": 14,
+        "section": "JIT Interpretation",
+        "text": "A Just-In-Time (JIT) interpreter executes bytecode directly while dynamically compiling frequently executed hot loops into native assembly.",
+        "retrievalScore": 0.55,
+        "rank": 8,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-long-03",
+    "category": "LONG_CONTEXT",
+    "query": "What are the four fundamental principles of Object-Oriented Programming (OOP)?",
+    "description": "8 candidates: 4 OOP principles (Encapsulation, Abstraction, Inheritance, Polymorphism) and 4 functional programming concepts.",
+    "relevantChunkIds": [
+      "long-03-c1",
+      "long-03-c2",
+      "long-03-c3",
+      "long-03-c4"
+    ],
+    "referenceAnswer": "The four fundamental principles of OOP are: 1) Encapsulation (bundling data and restricting direct access), 2) Abstraction (hiding internal implementation details), 3) Inheritance (deriving new classes from existing classes), and 4) Polymorphism (allowing entities to take on multiple forms).",
+    "answerable": true,
+    "requiredFacts": [
+      "encapsulation",
+      "abstraction",
+      "inheritance",
+      "polymorphism"
+    ],
+    "candidateChunks": [
+      {
+        "id": "long-03-c1",
+        "documentId": "doc-oop",
+        "source": "object-oriented-design.pdf",
+        "pageNumber": 2,
+        "section": "Encapsulation",
+        "text": "Encapsulation bundles fields and methods into an object while restricting direct outside access to internal state through access modifiers (private, protected, public).",
+        "retrievalScore": 0.93,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c2",
+        "documentId": "doc-oop",
+        "source": "object-oriented-design.pdf",
+        "pageNumber": 3,
+        "section": "Abstraction",
+        "text": "Abstraction hides internal implementation complexities, exposing only clean, high-level interfaces through abstract classes and interface contracts.",
+        "retrievalScore": 0.89,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c3",
+        "documentId": "doc-oop",
+        "source": "object-oriented-design.pdf",
+        "pageNumber": 4,
+        "section": "Inheritance",
+        "text": "Inheritance allows a subclass to inherit attributes and methods from a superclass, fostering code reuse and hierarchical class taxonomies.",
+        "retrievalScore": 0.86,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c4",
+        "documentId": "doc-oop",
+        "source": "object-oriented-design.pdf",
+        "pageNumber": 5,
+        "section": "Polymorphism",
+        "text": "Polymorphism enables objects of different classes to respond to the same method invocation via method overriding and virtual function tables.",
+        "retrievalScore": 0.83,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c5",
+        "documentId": "doc-oop",
+        "source": "functional-programming.pdf",
+        "pageNumber": 1,
+        "section": "Pure Functions",
+        "text": "Pure functions in functional programming produce outputs based solely on inputs without causing observable side effects or mutating external state.",
+        "retrievalScore": 0.71,
+        "rank": 5,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c6",
+        "documentId": "doc-oop",
+        "source": "functional-programming.pdf",
+        "pageNumber": 3,
+        "section": "Tail Recursion",
+        "text": "Tail recursion optimizes recursive function calls where the recursive step is the final action, allowing compilers to reuse the current stack frame.",
+        "retrievalScore": 0.65,
+        "rank": 6,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c7",
+        "documentId": "doc-oop",
+        "source": "functional-programming.pdf",
+        "pageNumber": 5,
+        "section": "Closures",
+        "text": "A closure is a first-class function that retains access to variables from its surrounding lexical scope even after that scope has exited.",
+        "retrievalScore": 0.6,
+        "rank": 7,
+        "decision": "pending"
+      },
+      {
+        "id": "long-03-c8",
+        "documentId": "doc-oop",
+        "source": "functional-programming.pdf",
+        "pageNumber": 7,
+        "section": "Monads",
+        "text": "Monads encapsulate computational pipelines with bind (flatMap) and unit functions to handle side effects in purely functional languages.",
+        "retrievalScore": 0.54,
+        "rank": 8,
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "id": "bench-long-04",
+    "category": "LONG_CONTEXT",
+    "query": "What geological epochs comprise the Quaternary period and what events define them?",
+    "description": "8 candidates: 3 Quaternary epochs (Pleistocene, Holocene, Anthropocene) and 5 distant geological periods (Jurassic, Cretaceous, etc.).",
+    "relevantChunkIds": [
+      "long-04-c1",
+      "long-04-c2",
+      "long-04-c3"
+    ],
+    "referenceAnswer": "The Quaternary period comprises: 1) the Pleistocene epoch (defined by repeated glacial cycles and megafauna), 2) the Holocene epoch (current post-glacial era spanning modern civilization), and 3) the proposed Anthropocene epoch (defined by overwhelming human impact on Earth systems).",
+    "answerable": true,
+    "requiredFacts": [
+      "pleistocene",
+      "holocene",
+      "glacial"
+    ],
+    "candidateChunks": [
+      {
+        "id": "long-04-c1",
+        "documentId": "doc-geology",
+        "source": "quaternary-chronology.pdf",
+        "pageNumber": 2,
+        "section": "Pleistocene Epoch",
+        "text": "The Pleistocene epoch spanned from 2.58 million to 11,700 years ago, characterized by repeated continental glaciation cycles and the evolution of hominids and megafauna.",
+        "retrievalScore": 0.91,
+        "rank": 1,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c2",
+        "documentId": "doc-geology",
+        "source": "quaternary-chronology.pdf",
+        "pageNumber": 4,
+        "section": "Holocene Epoch",
+        "text": "The Holocene epoch began approximately 11,700 years ago following the Last Glacial Maximum, encompassing the entire history of human agriculture and recorded civilization.",
+        "retrievalScore": 0.88,
+        "rank": 2,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c3",
+        "documentId": "doc-geology",
+        "source": "quaternary-chronology.pdf",
+        "pageNumber": 6,
+        "section": "Anthropocene Proposal",
+        "text": "The proposed Anthropocene epoch begins in the mid-20th century, defined by distinct radionuclide deposits and widespread human geological disruption.",
+        "retrievalScore": 0.83,
+        "rank": 3,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c4",
+        "documentId": "doc-geology",
+        "source": "mesozoic-era.pdf",
+        "pageNumber": 3,
+        "section": "Jurassic Period",
+        "text": "The Jurassic period occurred 201 to 145 million years ago, marked by the breakup of Pangaea and the diversification of sauropod dinosaurs.",
+        "retrievalScore": 0.72,
+        "rank": 4,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c5",
+        "documentId": "doc-geology",
+        "source": "mesozoic-era.pdf",
+        "pageNumber": 7,
+        "section": "Cretaceous Extinction",
+        "text": "The Cretaceous period concluded 66 million years ago with the Chicxulub asteroid impact triggering the Cretaceous-Paleogene extinction event.",
+        "retrievalScore": 0.66,
+        "rank": 5,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c6",
+        "documentId": "doc-geology",
+        "source": "paleozoic-era.pdf",
+        "pageNumber": 2,
+        "section": "Cambrian Explosion",
+        "text": "The Cambrian explosion 541 million years ago saw the rapid appearance of major animal phyla in the fossil record.",
+        "retrievalScore": 0.61,
+        "rank": 6,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c7",
+        "documentId": "doc-geology",
+        "source": "paleozoic-era.pdf",
+        "pageNumber": 5,
+        "section": "Permian Extinction",
+        "text": "The Permian-Triassic extinction event wiped out an estimated 96% of all marine species due to massive Siberian Traps volcanism.",
+        "retrievalScore": 0.57,
+        "rank": 7,
+        "decision": "pending"
+      },
+      {
+        "id": "long-04-c8",
+        "documentId": "doc-geology",
+        "source": "mesozoic-era.pdf",
+        "pageNumber": 1,
+        "section": "Triassic Recovery",
+        "text": "The Triassic period initiated the Mesozoic era, witnessing the initial evolution of early dinosaurs in an arid climate.",
+        "retrievalScore": 0.51,
+        "rank": 8,
+        "decision": "pending"
+      }
+    ]
+  }
+]

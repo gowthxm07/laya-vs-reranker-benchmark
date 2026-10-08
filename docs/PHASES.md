@@ -109,11 +109,24 @@ This roadmap tracks the progressive implementation of PatternRAG Lab across its 
 
 ---
 
-### Phase 6 — Evaluation Metrics & Benchmark Suite (Planned)
-- Implement objective evaluation metrics: Answer faithfulness, answer relevance, context reduction efficiency.
-- Measure context precision, recall, and hallucination rates.
-- Implement automated benchmark runner across curated query collections.
-- Establish empirical head-to-head comparison without premature bias.
+### Phase 6 — Evaluation Metrics & Benchmark Suite (Completed)
+- [x] Defined benchmark domain types in `src/lib/types/benchmark.ts` (`BenchmarkCategory`, `BenchmarkCase`, `RelevanceMetrics`, `ContextEfficiencyMetrics`, `AnswerQualityMetrics`, `FailureClassification`, `QueryBenchmarkResult`, `MetricAggregate`, `CategoryAggregate`, `PairedComparisonSummary`, `ParetoAnalysisSummary`, `BenchmarkSuiteResult`).
+- [x] Curated deterministic 36-case benchmark dataset in `data/benchmark/benchmark-dataset.json` spanning 9 distinct retrieval conditions (`NORMAL`, `DISTRACTOR_HEAVY`, `MULTI_CHUNK`, `AMBIGUOUS`, `PARTIAL_CONTEXT`, `NO_ANSWER`, `SINGLE_RELEVANT`, `CONFLICTING_CONTEXT`, `LONG_CONTEXT`).
+- [x] Implemented `BenchmarkDatasetService` enforcing schema invariants, unique IDs, candidate chunk validity, and ground truth integrity.
+- [x] Implemented `BenchmarkEvaluator` calculating:
+  - Relevance metrics: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).
+  - Context efficiency: Context Reduction %, Character Reduction %, Token Reduction %, Retention Rate.
+  - Answer quality & faithfulness: Exact Match, Reference Answer Similarity, Fact Coverage, No-Answer Compliance, Deterministic Faithfulness.
+  - Multi-attribute Pareto tradeoff analysis (evaluating dominance across 5 dimensions without arbitrary winner scoring).
+  - Paired difference statistics (query-by-query differential, CE superior, Laya superior, ties).
+  - Failure classification taxonomy (`BOTH_CORRECT`, `BOTH_INCORRECT`, `CROSS_ENCODER_FALSE_POSITIVE`, `LAYA_FALSE_NEGATIVE`, etc.).
+- [x] Implemented `BenchmarkRunnerService` orchestrating sequential execution over `RAGComparisonOrchestrator`, calculating aggregates, and writing raw machine-readable JSON to `data/benchmark/results/`.
+- [x] Implemented `scripts/run-benchmark.ts` CLI runner with support for native/context-budget modes, runs per query, and `--mock` mode.
+- [x] Created `GET /api/benchmark` and `POST /api/benchmark` endpoints for client benchmark execution.
+- [x] Built `BenchmarkSuiteView` and `QueryDetailModal` UI components with mode switcher, budget selector, KPI strip, summary comparison table, category-level breakdown table, Pareto analysis card, and per-query inspector.
+- [x] Added view navigation in `src/app/page.tsx` switching smoothly between Interactive RAG Lab and Controlled Benchmark Suite.
+- [x] Added 23 comprehensive unit tests in `src/__tests__/benchmark.test.ts` (86 tests passing across 6 project suites in Vitest).
+- [x] Created comprehensive documentation in `docs/BENCHMARK.md`.
 
 ---
 

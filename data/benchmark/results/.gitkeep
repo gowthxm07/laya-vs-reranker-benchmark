@@ -1,0 +1,3 @@
+# Ignore generated benchmark run outputs
+benchmark-run-*.json
+!results/.gitkeep

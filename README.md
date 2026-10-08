@@ -1,9 +1,9 @@
 # PatternRAG Lab — Laya vs Advanced RAG Benchmark
 
-> **Phase 5: Controlled Cross-Encoder vs Laya LLM Comparison**  
-> *Note: Phase 5 connects both Path A (Cross-Encoder reranking) and Path B (Laya relevance filtering) to the SAME downstream LLM (`llama3.2:3b` via local Ollama) consuming the exact same shared `CandidateChunkPool`. Both paths execute under identical prompt structures and generation parameters (`temperature: 0, seed: 42`) in two modes: Native Strategy and Context-Budget. Head-to-head metrics, answers, stage latencies, and token budgets are reported objectively without premature winner declaration.*
+> **Phase 6: Controlled Benchmark & Objective Evaluation**  
+> *Note: Phase 6 implements a comprehensive, version-controlled benchmark suite of 36 deterministic cases across 9 diverse retrieval categories. Evaluating Cross-Encoder reranking versus Laya binary relevance filtering under identical candidate pools and downstream LLM generation (`llama3.2:3b`), it independently reports relevance metrics (Precision, Recall, F1, Hit Rate), context efficiency, token footprints, component latencies, failure taxonomy, paired differences, and multi-dimensional Pareto tradeoffs without arbitrary winner scoring.*
 
-[![Phase 5](https://img.shields.io/badge/Status-Phase%205%20Controlled%20LLM%20Comparison-success.svg)](#current-phase-5-capabilities)
+[![Phase 6](https://img.shields.io/badge/Status-Phase%206%20Objective%20Benchmark%20Suite-success.svg)](#current-phase-6-capabilities)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
@@ -11,6 +11,7 @@
 [![Cross-Encoder](https://img.shields.io/badge/Cross--Encoder-ms--marco--MiniLM--L--6--v2-purple.svg)](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2)
 [![Laya](https://img.shields.io/badge/Laya-ModernBERT--large%20421M-orange.svg)](docs/LAYA.md)
 [![LLM](https://img.shields.io/badge/LLM-llama3.2:3b-blue.svg)](https://ollama.com/)
+
 
 ---
 
@@ -89,6 +90,7 @@ To ensure scientific validity, both paths evaluate the **exact same candidate ch
 ```
 
 Detailed architectural diagrams and subsystem guides:
+- [`docs/BENCHMARK.md`](docs/BENCHMARK.md) — Objective evaluation methodology, metrics specification, 9 categories, paired differences & Pareto tradeoffs
 - [`docs/COMPARISON.md`](docs/COMPARISON.md) — Controlled same-LLM comparison, dual modes, prompt isolation, latency & token instrumentation
 - [`docs/LAYA.md`](docs/LAYA.md) — Laya non-autoregressive relevance filtering, worker IPC, and calibration
 - [`docs/RERANKING.md`](docs/RERANKING.md) — Cross-Encoder joint scoring, logit semantics & Top-N selection
@@ -99,9 +101,26 @@ Detailed architectural diagrams and subsystem guides:
 
 ---
 
-## 4. Current Phase 5 Capabilities
+## 4. Current Phase 6 Capabilities
 
-PatternRAG Lab supports both post-retrieval relevance strategies evaluated head-to-head against the same downstream LLM:
+PatternRAG Lab provides an end-to-end evaluation environment for post-retrieval relevance and downstream LLM generation:
+
+### Objective Benchmark Suite & Multi-Metric Evaluation (Phase 6)
+- **36 Deterministic Benchmark Cases**:
+  - Version-controlled dataset spanning 9 retrieval conditions: `NORMAL`, `DISTRACTOR_HEAVY`, `MULTI_CHUNK`, `AMBIGUOUS`, `PARTIAL_CONTEXT`, `NO_ANSWER`, `SINGLE_RELEVANT`, `CONFLICTING_CONTEXT`, `LONG_CONTEXT`.
+  - Independent ground truth without model-generated labels or circular LLM scoring.
+- **Comprehensive Relevance & Efficiency Metrics**:
+  - **Relevance Selection**: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).
+  - **Context & Token Footprint**: Candidate reduction %, Character reduction %, Token reduction %, Token counts.
+  - **Answer Quality**: Fact coverage, Exact match, Reference answer similarity, No-Answer refusal compliance, Groundedness.
+- **Multi-Dimensional Pareto Tradeoff Analysis**:
+  - Replaces arbitrary single-score weighting with Pareto dominance checks across 5 dimensions (F1, Fact Coverage, Context Reduction, Relevance Latency, Total Latency).
+- **Paired Differential Statistics**:
+  - Tracks query-by-query performance differentials ($CE - Laya$), reporting superior counts and ties.
+- **Interactive UI Suite & Per-Query Inspector**:
+  - Dedicated benchmark view with KPI strip, aggregate summary table, category-level breakdown, and query inspector modal.
+- **Reproducible CLI Runner**:
+  - `scripts/run-benchmark.ts`: Standalone execution supporting native/budget modes, repeated runs, and mock verification.
 
 ### Controlled Same-LLM Comparison Engine (Phase 5)
 - **Same Model, Temperature & Seed**:
@@ -206,7 +225,7 @@ PatternRAG Lab applies six classical software design patterns:
 - **Phase 3**: Advanced RAG / Cross-Encoder Relevance Evaluation (Done)
 - **Phase 4**: Laya Relevance Evaluation (Done)
 - **Phase 5**: Same-LLM Controlled Cross-Encoder vs Laya Comparison (Done)
-- **Phase 6**: Evaluation Metrics & Benchmark Suite
+- **Phase 6**: Controlled Benchmark & Objective Evaluation (Done)
 - **Phase 7**: Dashboard, Trace & History Refinement
 - **Phase 8**: Final Testing, Documentation & Demonstration
 
@@ -291,7 +310,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 # Run TypeScript compilation check
 npm run type-check
 
-# Run automated test suite (63+ unit tests)
+# Run automated test suite (86+ unit tests)
 npm test
 
 # Run code linter
@@ -305,6 +324,12 @@ python scripts/test-laya-integration.py
 
 # Verify end-to-end controlled comparison integration
 npx tsx scripts/test-comparison-integration.ts
+
+# Execute controlled benchmark suite with mock providers (0.2s)
+npx tsx scripts/run-benchmark.ts --mock
+
+# Execute live controlled benchmark suite (local Cross-Encoder + Laya + Ollama)
+npx tsx scripts/run-benchmark.ts
 ```
 
 ### Production Build

@@ -120,9 +120,21 @@ Interchangeable generation layer:
 ### 3.9 Telemetry & Trace Observer (`IPipelineObserver`)
 Listens to pipeline lifecycle events without polluting core evaluation routines. Captures phase durations (`TraceEvent`), chunk decision audits, and token counters.
 
+### 3.10 Objective Benchmark Suite & Evaluator (`BenchmarkRunnerService`, `BenchmarkEvaluator`)
+- **Version-Controlled Benchmark Dataset**: 36 deterministic cases across 9 categories (`data/benchmark/benchmark-dataset.json`).
+- **Objective Multi-Metric Evaluation**:
+  - Relevance Selection: Precision, Recall, F1, Hit Rate, MRR (ranking only), NDCG (ranking only).
+  - Context & Token Efficiency: Candidate reduction %, Character reduction %, Token reduction %, Token footprint.
+  - Answer Quality: Exact Match, Reference Answer Similarity, Fact Coverage, No-Answer Refusal Compliance, Deterministic Faithfulness.
+  - Latency: Component-level decomposition (relevance, context build, LLM generation, total).
+- **Multi-Dimensional Pareto Tradeoff Analysis**: Evaluates dominance across 5 objective axes rather than calculating arbitrary weighted winner scores.
+- **Paired Differential Statistics**: Computes query-by-query difference ($CE - Laya$), reporting superior counts and ties.
+- **Diagnostics**: Categorizes errors into failure taxonomy (`CROSS_ENCODER_FALSE_POSITIVE`, `LAYA_FALSE_NEGATIVE`, etc.).
+
 ---
 
 ## 4. Documentation References
+- Objective Benchmark & Evaluation: [`docs/BENCHMARK.md`](BENCHMARK.md)
 - Controlled LLM Comparison: [`docs/COMPARISON.md`](COMPARISON.md)
 - Laya Relevance Evaluation: [`docs/LAYA.md`](LAYA.md)
 - Cross-Encoder Reranking: [`docs/RERANKING.md`](RERANKING.md)

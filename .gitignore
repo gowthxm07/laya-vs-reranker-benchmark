@@ -40,6 +40,9 @@ yarn-error.log*
 next-env.d.ts
 
 # local storage & vector data
-/data/
+/data/*
+!/data/benchmark/
+/data/benchmark/results/*
+!/data/benchmark/results/.gitkeep
 /.data/
 *.vector-store.json
