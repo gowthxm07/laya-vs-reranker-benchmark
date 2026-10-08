@@ -7,6 +7,9 @@ export class MarkdownDocumentParser implements DocumentParser {
 
   canParse(mimeType: string, filename: string): boolean {
     const ext = filename.toLowerCase().slice(filename.lastIndexOf("."));
+    if (ext === ".pdf") {
+      return false;
+    }
     return (
       this.supportedMimeTypes.includes(mimeType.toLowerCase()) ||
       this.supportedExtensions.includes(ext)

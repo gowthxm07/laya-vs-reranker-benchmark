@@ -105,10 +105,10 @@ export function AnalyticsSection({
                 <tr className="hover:bg-surface-elevated/20 transition-colors">
                   <td className="py-2.5 px-4 text-text-secondary">Precision</td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {ceMetrics.precision !== null ? `${ceMetrics.precision.toFixed(1)}%` : "—"}
+                    {ceMetrics.precision !== null ? `${ceMetrics.precision.toFixed(1)}%` : "N/A — unannotated"}
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {layaMetrics.precision !== null ? `${layaMetrics.precision.toFixed(1)}%` : "—"}
+                    {layaMetrics.precision !== null ? `${layaMetrics.precision.toFixed(1)}%` : "N/A — unannotated"}
                   </td>
                 </tr>
 
@@ -116,10 +116,10 @@ export function AnalyticsSection({
                 <tr className="hover:bg-surface-elevated/20 transition-colors">
                   <td className="py-2.5 px-4 text-text-secondary">Recall</td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {ceMetrics.recall !== null ? `${ceMetrics.recall.toFixed(1)}%` : "—"}
+                    {ceMetrics.recall !== null ? `${ceMetrics.recall.toFixed(1)}%` : "N/A — unannotated"}
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {layaMetrics.recall !== null ? `${layaMetrics.recall.toFixed(1)}%` : "—"}
+                    {layaMetrics.recall !== null ? `${layaMetrics.recall.toFixed(1)}%` : "N/A — unannotated"}
                   </td>
                 </tr>
 
@@ -127,10 +127,10 @@ export function AnalyticsSection({
                 <tr className="hover:bg-surface-elevated/20 transition-colors">
                   <td className="py-2.5 px-4 text-text-secondary">F1</td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {ceMetrics.f1 !== null ? `${ceMetrics.f1.toFixed(1)}%` : "—"}
+                    {ceMetrics.f1 !== null ? `${ceMetrics.f1.toFixed(1)}%` : "N/A — unannotated"}
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {layaMetrics.f1 !== null ? `${layaMetrics.f1.toFixed(1)}%` : "—"}
+                    {layaMetrics.f1 !== null ? `${layaMetrics.f1.toFixed(1)}%` : "N/A — unannotated"}
                   </td>
                 </tr>
 
@@ -138,7 +138,9 @@ export function AnalyticsSection({
                 <tr className="hover:bg-surface-elevated/20 transition-colors">
                   <td className="py-2.5 px-4 text-text-secondary">Context Reduction</td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {comparisonResult.sharedRetrieval.candidateCount > 0
+                    {comparisonResult.crossEncoder.error
+                      ? "N/A — failed"
+                      : comparisonResult.sharedRetrieval.candidateCount > 0
                       ? `${(
                           ((comparisonResult.sharedRetrieval.candidateCount -
                             comparisonResult.crossEncoder.retainedCount) /
@@ -148,7 +150,9 @@ export function AnalyticsSection({
                       : "0.0%"}
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {comparisonResult.sharedRetrieval.candidateCount > 0
+                    {comparisonResult.laya.error
+                      ? "N/A — failed"
+                      : comparisonResult.sharedRetrieval.candidateCount > 0
                       ? `${(
                           ((comparisonResult.sharedRetrieval.candidateCount -
                             comparisonResult.laya.retainedCount) /
@@ -163,10 +167,14 @@ export function AnalyticsSection({
                 <tr className="hover:bg-surface-elevated/20 transition-colors">
                   <td className="py-2.5 px-4 text-text-secondary">Prompt Tokens</td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {formatTokens(comparisonResult.crossEncoder.promptTokens)}
+                    {comparisonResult.crossEncoder.error
+                      ? "N/A — failed"
+                      : formatTokens(comparisonResult.crossEncoder.promptTokens)}
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {formatTokens(comparisonResult.laya.promptTokens)}
+                    {comparisonResult.laya.error
+                      ? "N/A — failed"
+                      : formatTokens(comparisonResult.laya.promptTokens)}
                   </td>
                 </tr>
 
@@ -174,10 +182,14 @@ export function AnalyticsSection({
                 <tr className="hover:bg-surface-elevated/20 transition-colors">
                   <td className="py-2.5 px-4 text-text-secondary">Total Latency</td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {formatLatency(comparisonResult.crossEncoder.totalLatencyMs)}
+                    {comparisonResult.crossEncoder.error
+                      ? "N/A — failed"
+                      : formatLatency(comparisonResult.crossEncoder.totalLatencyMs)}
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
-                    {formatLatency(comparisonResult.laya.totalLatencyMs)}
+                    {comparisonResult.laya.error
+                      ? "N/A — failed"
+                      : formatLatency(comparisonResult.laya.totalLatencyMs)}
                   </td>
                 </tr>
               </tbody>
@@ -185,7 +197,7 @@ export function AnalyticsSection({
 
             {groundTruthCount === 0 && (
               <div className="px-4 py-2 border-t border-border/60 bg-surface-subtle/40 text-[11px] text-text-muted">
-                Note: Precision, Recall, and F1 are measured when evaluating queries with annotated ground-truth passages.
+                Note: Relevance metrics require annotated ground-truth passages. Custom interactive queries are unannotated.
               </div>
             )}
           </div>
@@ -207,9 +219,15 @@ export function AnalyticsSection({
                 <div className="text-xs font-semibold text-text-primary">
                   Cross-Encoder
                 </div>
-                <div className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
-                  {comparisonResult.crossEncoder.answer || "No response generated."}
-                </div>
+                {comparisonResult.crossEncoder.error ? (
+                  <div className="text-xs text-rose-700 bg-rose-50 p-2.5 rounded border border-rose-200 leading-relaxed font-mono">
+                    <strong>Evaluation failed:</strong> {comparisonResult.crossEncoder.error}
+                  </div>
+                ) : (
+                  <div className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
+                    {comparisonResult.crossEncoder.answer || "No response generated."}
+                  </div>
+                )}
               </div>
 
               {/* Laya Answer */}
@@ -217,9 +235,15 @@ export function AnalyticsSection({
                 <div className="text-xs font-semibold text-text-primary">
                   Laya
                 </div>
-                <div className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
-                  {comparisonResult.laya.answer || "No response generated."}
-                </div>
+                {comparisonResult.laya.error ? (
+                  <div className="text-xs text-rose-700 bg-rose-50 p-2.5 rounded border border-rose-200 leading-relaxed font-mono">
+                    <strong>Evaluation failed / timed out:</strong> {comparisonResult.laya.error}
+                  </div>
+                ) : (
+                  <div className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
+                    {comparisonResult.laya.answer || "No response generated."}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -248,37 +272,37 @@ export function AnalyticsSection({
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans">Relevance Evaluation</td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatLatency(comparisonResult.crossEncoder.relevanceLatencyMs)}
+                          {comparisonResult.crossEncoder.error ? "N/A" : formatLatency(comparisonResult.crossEncoder.relevanceLatencyMs)}
                         </td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatLatency(comparisonResult.laya.relevanceLatencyMs)}
+                          {comparisonResult.laya.error ? "N/A" : formatLatency(comparisonResult.laya.relevanceLatencyMs)}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans">Context Assembly</td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatLatency(comparisonResult.crossEncoder.contextBuildLatencyMs)}
+                          {comparisonResult.crossEncoder.error ? "N/A" : formatLatency(comparisonResult.crossEncoder.contextBuildLatencyMs)}
                         </td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatLatency(comparisonResult.laya.contextBuildLatencyMs)}
+                          {comparisonResult.laya.error ? "N/A" : formatLatency(comparisonResult.laya.contextBuildLatencyMs)}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans">LLM Generation</td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatLatency(comparisonResult.crossEncoder.generationLatencyMs)}
+                          {comparisonResult.crossEncoder.error ? "N/A" : formatLatency(comparisonResult.crossEncoder.generationLatencyMs)}
                         </td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatLatency(comparisonResult.laya.generationLatencyMs)}
+                          {comparisonResult.laya.error ? "N/A" : formatLatency(comparisonResult.laya.generationLatencyMs)}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans font-medium">Total Latency</td>
                         <td className="py-2 px-3 text-text-primary font-semibold">
-                          {formatLatency(comparisonResult.crossEncoder.totalLatencyMs)}
+                          {comparisonResult.crossEncoder.error ? "N/A — failed" : formatLatency(comparisonResult.crossEncoder.totalLatencyMs)}
                         </td>
                         <td className="py-2 px-3 text-text-primary font-semibold">
-                          {formatLatency(comparisonResult.laya.totalLatencyMs)}
+                          {comparisonResult.laya.error ? "N/A — failed" : formatLatency(comparisonResult.laya.totalLatencyMs)}
                         </td>
                       </tr>
                     </tbody>
@@ -304,28 +328,28 @@ export function AnalyticsSection({
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans">Prompt Tokens</td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatTokens(comparisonResult.crossEncoder.promptTokens)}
+                          {comparisonResult.crossEncoder.error ? "N/A" : formatTokens(comparisonResult.crossEncoder.promptTokens)}
                         </td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatTokens(comparisonResult.laya.promptTokens)}
+                          {comparisonResult.laya.error ? "N/A" : formatTokens(comparisonResult.laya.promptTokens)}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans">Completion Tokens</td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatTokens(comparisonResult.crossEncoder.completionTokens)}
+                          {comparisonResult.crossEncoder.error ? "N/A" : formatTokens(comparisonResult.crossEncoder.completionTokens)}
                         </td>
                         <td className="py-2 px-3 text-text-primary">
-                          {formatTokens(comparisonResult.laya.completionTokens)}
+                          {comparisonResult.laya.error ? "N/A" : formatTokens(comparisonResult.laya.completionTokens)}
                         </td>
                       </tr>
                       <tr>
                         <td className="py-2 px-3 text-text-secondary font-sans font-medium">Total Tokens</td>
                         <td className="py-2 px-3 text-text-primary font-semibold">
-                          {formatTokens(comparisonResult.crossEncoder.totalTokens)}
+                          {comparisonResult.crossEncoder.error ? "N/A" : formatTokens(comparisonResult.crossEncoder.totalTokens)}
                         </td>
                         <td className="py-2 px-3 text-text-primary font-semibold">
-                          {formatTokens(comparisonResult.laya.totalTokens)}
+                          {comparisonResult.laya.error ? "N/A" : formatTokens(comparisonResult.laya.totalTokens)}
                         </td>
                       </tr>
                     </tbody>

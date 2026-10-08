@@ -9,9 +9,9 @@ import { PdfDocumentParser } from "./pdf-parser";
  */
 export class DocumentParserFactory {
   private static parsers: DocumentParser[] = [
-    new TextDocumentParser(),
-    new MarkdownDocumentParser(),
     new PdfDocumentParser(),
+    new MarkdownDocumentParser(),
+    new TextDocumentParser(),
   ];
 
   /**
@@ -22,9 +22,21 @@ export class DocumentParserFactory {
   }
 
   /**
-   * Resolves the appropriate parser for a given filename and MIME type
+   * Resolves the appropriate parser for a given filename and MIME type.
+   * File extensions (.pdf, .md, .txt) take strict precedence to prevent
+   * ambiguous or default MIME types (e.g. multipart/form-data text/plain)
+   * from parsing binary formats incorrectly.
    */
   public static getParser(filename: string, mimeType?: string): DocumentParser {
+    const ext = filename.toLowerCase().slice(filename.lastIndexOf("."));
+    
+    // Strict extension-based resolution first
+    for (const parser of this.parsers) {
+      if (parser.supportedExtensions.includes(ext)) {
+        return parser;
+      }
+    }
+
     const effectiveMime = mimeType || this.inferMimeType(filename);
     for (const parser of this.parsers) {
       if (parser.canParse(effectiveMime, filename)) {

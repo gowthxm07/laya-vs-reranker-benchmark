@@ -81,12 +81,25 @@ export function RelevanceEnginesSection({
                 </div>
 
                 <div className="space-y-1.5 pt-1">
-                  <div className="text-lg font-semibold text-text-primary">
-                    {comparisonResult.crossEncoder.retainedCount} selected / {comparisonResult.sharedRetrieval.candidateCount}
-                  </div>
-                  <div className="text-xs text-text-muted font-mono">
-                    Evaluation latency: {formatLatency(comparisonResult.crossEncoder.relevanceLatencyMs)}
-                  </div>
+                  {comparisonResult.crossEncoder.error ? (
+                    <div className="space-y-1">
+                      <div className="text-sm font-semibold text-rose-700">
+                        Evaluation failed
+                      </div>
+                      <div className="text-xs text-rose-600 font-mono break-words leading-tight">
+                        {comparisonResult.crossEncoder.error}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-lg font-semibold text-text-primary">
+                        {comparisonResult.crossEncoder.retainedCount} selected / {comparisonResult.sharedRetrieval.candidateCount}
+                      </div>
+                      <div className="text-xs text-text-muted font-mono">
+                        Evaluation latency: {formatLatency(comparisonResult.crossEncoder.relevanceLatencyMs)}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -120,12 +133,25 @@ export function RelevanceEnginesSection({
                 </div>
 
                 <div className="space-y-1.5 pt-1">
-                  <div className="text-lg font-semibold text-text-primary">
-                    {comparisonResult.laya.retainedCount} kept / {comparisonResult.sharedRetrieval.candidateCount}
-                  </div>
-                  <div className="text-xs text-text-muted font-mono">
-                    Evaluation latency: {formatLatency(comparisonResult.laya.relevanceLatencyMs)}
-                  </div>
+                  {comparisonResult.laya.error ? (
+                    <div className="space-y-1">
+                      <div className="text-sm font-semibold text-rose-700">
+                        Evaluation failed / timed out
+                      </div>
+                      <div className="text-xs text-rose-600 font-mono break-words leading-tight">
+                        {comparisonResult.laya.error}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-lg font-semibold text-text-primary">
+                        {comparisonResult.laya.retainedCount} kept / {comparisonResult.sharedRetrieval.candidateCount}
+                      </div>
+                      <div className="text-xs text-text-muted font-mono">
+                        Evaluation latency: {formatLatency(comparisonResult.laya.relevanceLatencyMs)}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -200,18 +226,26 @@ export function RelevanceEnginesSection({
                         <div className="flex flex-wrap items-center gap-3 text-[11px]">
                           <div>
                             <span className="text-text-muted mr-1">Cross-Encoder:</span>
-                            <span className={isCESelected ? "text-emerald-700 font-medium" : "text-text-muted"}>
-                              {isCESelected ? "Selected" : "Discarded"}
-                            </span>
+                            {comparisonResult.crossEncoder.error ? (
+                              <span className="text-rose-600 font-medium">Error</span>
+                            ) : (
+                              <span className={isCESelected ? "text-emerald-700 font-medium" : "text-text-muted"}>
+                                {isCESelected ? "Selected" : "Discarded"}
+                              </span>
+                            )}
                           </div>
 
                           <span className="text-border">•</span>
 
                           <div>
                             <span className="text-text-muted mr-1">Laya:</span>
-                            <span className={isLayaKept ? "text-emerald-700 font-medium" : "text-text-muted"}>
-                              {isLayaKept ? "KEEP" : "DROP"}
-                            </span>
+                            {comparisonResult.laya.error ? (
+                              <span className="text-rose-600 font-medium">Error / Timed out</span>
+                            ) : (
+                              <span className={isLayaKept ? "text-emerald-700 font-medium" : "text-text-muted"}>
+                                {isLayaKept ? "KEEP" : "DROP"}
+                              </span>
+                            )}
                           </div>
 
                           {isGTKnown && (

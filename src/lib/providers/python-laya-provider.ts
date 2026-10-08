@@ -61,8 +61,16 @@ export class PythonLayaProvider implements LayaProvider {
     this.workerScriptPath =
       config?.workerScriptPath ||
       path.join(process.cwd(), "scripts", "laya_worker.py");
-    this.startupTimeoutMs = config?.startupTimeoutMs ?? 60000;
-    this.requestTimeoutMs = config?.requestTimeoutMs ?? 30000;
+    this.startupTimeoutMs =
+      config?.startupTimeoutMs ??
+      (process.env.LAYA_STARTUP_TIMEOUT_MS
+        ? Number(process.env.LAYA_STARTUP_TIMEOUT_MS)
+        : 90000);
+    this.requestTimeoutMs =
+      config?.requestTimeoutMs ??
+      (process.env.LAYA_REQUEST_TIMEOUT_MS
+        ? Number(process.env.LAYA_REQUEST_TIMEOUT_MS)
+        : 90000);
   }
 
   /**
@@ -205,6 +213,7 @@ export class PythonLayaProvider implements LayaProvider {
         const idx = this.pendingQueue.findIndex((p) => p.timeoutId === timeoutId);
         if (idx !== -1) {
           this.pendingQueue.splice(idx, 1);
+          this.dispose();
           reject(
             new Error(
               `Laya evaluation timed out after ${this.requestTimeoutMs}ms.`

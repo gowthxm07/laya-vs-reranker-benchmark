@@ -3,6 +3,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { TextDocumentParser } from "../lib/parsers/text-parser";
 import { MarkdownDocumentParser } from "../lib/parsers/markdown-parser";
+import { PdfDocumentParser } from "../lib/parsers/pdf-parser";
 import { DocumentParserFactory } from "../lib/parsers/parser-factory";
 import { DeterministicChunker } from "../lib/chunking/chunker";
 import { MockEmbeddingProvider } from "../lib/providers/mock-embedding-provider";
@@ -76,6 +77,13 @@ describe("Phase 2 — Document Ingestion, Chunking & Shared Vector Retrieval", (
 
       const mdParser = DocumentParserFactory.getParser("README.md");
       expect(mdParser).toBeInstanceOf(MarkdownDocumentParser);
+
+      const pdfParser = DocumentParserFactory.getParser("document.pdf");
+      expect(pdfParser).toBeInstanceOf(PdfDocumentParser);
+
+      // Verify extension takes precedence even if caller passes text/plain
+      const pdfWithWrongMime = DocumentParserFactory.getParser("document.pdf", "text/plain");
+      expect(pdfWithWrongMime).toBeInstanceOf(PdfDocumentParser);
 
       expect(() => DocumentParserFactory.getParser("spreadsheet.xlsx")).toThrow(
         /Unsupported document format/
