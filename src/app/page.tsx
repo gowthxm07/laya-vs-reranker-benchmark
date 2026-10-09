@@ -14,7 +14,47 @@ import { Document } from "@/lib/types/document";
 import { CandidateChunkPool } from "@/lib/types/candidate-pool";
 import { ComparisonResult, ComparisonMode } from "@/lib/types/comparison";
 import { BenchmarkSuiteResult } from "@/lib/types/benchmark";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import {
+  ComparisonProgressPanel,
+  PipelineStageInfo,
+  StageId,
+  StageStatus,
+} from "@/components/comparison/comparison-progress-panel";
+
+const INITIAL_STAGES: PipelineStageInfo[] = [
+  { id: "retrieval", label: "Retrieving relevant passages", status: "pending" },
+  {
+    id: "cross-encoder-eval",
+    label: "Evaluating passages with Cross-Encoder",
+    status: "pending",
+  },
+  {
+    id: "laya-eval",
+    label: "Evaluating passages with Laya",
+    status: "pending",
+  },
+  {
+    id: "context-prep",
+    label: "Preparing context for both strategies",
+    status: "pending",
+  },
+  {
+    id: "cross-encoder-gen",
+    label: "Generating the Cross-Encoder answer",
+    status: "pending",
+  },
+  {
+    id: "laya-gen",
+    label: "Generating the Laya answer",
+    status: "pending",
+  },
+  {
+    id: "finalizing",
+    label: "Finalizing comparison results",
+    status: "pending",
+  },
+];
 
 export default function HomePage() {
   // Navigation: primary "lab", secondary "benchmark", "history"
@@ -42,11 +82,62 @@ export default function HomePage() {
   const [comparisonResult, setComparisonResult] =
     React.useState<ComparisonResult | null>(null);
   const [isComparing, setIsComparing] = React.useState<boolean>(false);
-  const [comparisonProgress, setComparisonProgress] = React.useState<string | null>(null);
+  const [stages, setStages] = React.useState<PipelineStageInfo[]>(INITIAL_STAGES);
+  const [elapsedSeconds, setElapsedSeconds] = React.useState<number>(0);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+  // References for live timer and request cancellation
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   // Context Modal state
   const [contextModalPath, setContextModalPath] = React.useState<"a" | "b" | null>(null);
+
+  // Lifecycle cleanup
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+  }, []);
+
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setElapsedSeconds(0);
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const updateStage = (
+    id: StageId,
+    status: StageStatus,
+    options?: { detail?: string; errorMessage?: string }
+  ) => {
+    setStages((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              status,
+              detail: options?.detail !== undefined ? options.detail : s.detail,
+              errorMessage:
+                options?.errorMessage !== undefined
+                  ? options.errorMessage
+                  : s.errorMessage,
+            }
+          : s
+      )
+    );
+  };
 
   // Check existing indexed documents on mount
   React.useEffect(() => {
@@ -55,6 +146,26 @@ export default function HomePage() {
       .then((data) => {
         if (data.success && data.totalChunksIndexed > 0) {
           setTotalIndexedChunks(data.totalChunksIndexed);
+          if (data.documents && data.documents.length > 0) {
+            const latestDoc = data.documents[data.documents.length - 1];
+            const mimeType = latestDoc.filename.endsWith(".pdf")
+              ? "application/pdf"
+              : latestDoc.filename.endsWith(".md")
+              ? "text/markdown"
+              : "text/plain";
+            setIndexedDoc({
+              id: latestDoc.documentId,
+              filename: latestDoc.filename,
+              mimeType,
+              size: 0,
+              createdAt: Date.now(),
+              pageCount: latestDoc.pageCount,
+              chunkCount: latestDoc.chunkCount,
+            });
+          }
+        } else {
+          setTotalIndexedChunks(0);
+          setIndexedDoc(null);
         }
       })
       .catch(() => {});
@@ -75,16 +186,27 @@ export default function HomePage() {
   };
 
   const handleRunComparison = async () => {
-    if (!query.trim()) return;
+    if (!query.trim() || isComparing) return;
 
     setIsComparing(true);
     setErrorMessage(null);
+    setComparisonResult(null);
+
+    // Initialize all stages with Stage 1 active
+    setStages(
+      INITIAL_STAGES.map((s, idx) =>
+        idx === 0 ? { ...s, status: "running" } : { ...s, status: "pending" }
+      )
+    );
+    startTimer();
+
+    abortControllerRef.current = new AbortController();
 
     try {
       // Step 1: Shared vector retrieval
-      setComparisonProgress("Retrieving candidate passages...");
       const retrieveRes = await fetch("/api/retrieve", {
         method: "POST",
+        signal: abortControllerRef.current.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: query.trim(),
@@ -94,23 +216,25 @@ export default function HomePage() {
 
       const retrieveData = await retrieveRes.json();
       if (!retrieveRes.ok || !retrieveData.success) {
-        throw new Error(
+        const err =
           retrieveData.error ||
-            "Unable to retrieve candidates. Please ensure a document is uploaded first."
-        );
+          "Unable to retrieve candidates. Please ensure a document is uploaded first.";
+        updateStage("retrieval", "error", { errorMessage: err });
+        throw new Error(err);
       }
 
+      updateStage("retrieval", "completed");
       const pool: CandidateChunkPool = retrieveData.pool;
       setCandidatePool(pool);
 
-      // Step 2: Head-to-head comparison
-      setComparisonProgress(
-        "Evaluating candidate passages with Cross-Encoder & Laya, then generating answers..."
-      );
-
+      // Step 2: Head-to-head comparison with SSE streaming
       const compareRes = await fetch("/api/compare", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        signal: abortControllerRef.current.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
         body: JSON.stringify({
           query: query.trim(),
           candidatePool: pool,
@@ -120,25 +244,146 @@ export default function HomePage() {
         }),
       });
 
-      const compareData = await compareRes.json();
-      if (!compareRes.ok || !compareData.success) {
-        throw new Error(
-          compareData.error ||
-            "Comparison failed. Please ensure Ollama is running with llama3.2:3b."
-        );
+      if (!compareRes.ok) {
+        let errText = "Comparison request failed.";
+        try {
+          const errJson = await compareRes.json();
+          errText = errJson.error || errText;
+        } catch {
+          // ignore
+        }
+        throw new Error(errText);
       }
 
-      const comp: ComparisonResult = compareData.result;
-      setComparisonResult(comp);
+      // If server returned streaming SSE response
+      if (
+        compareRes.headers.get("content-type")?.includes("text/event-stream") &&
+        compareRes.body
+      ) {
+        const reader = compareRes.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const blocks = buffer.split("\n\n");
+          buffer = blocks.pop() || "";
+
+          for (const block of blocks) {
+            if (!block.trim()) continue;
+            const eventMatch = block.match(/^event:\s*(.+)$/m);
+            const dataMatch = block.match(/^data:\s*(.+)$/m);
+            const eventName = eventMatch ? eventMatch[1].trim() : "message";
+            const rawData = dataMatch ? dataMatch[1].trim() : "";
+
+            if (!rawData) continue;
+            let data: Record<string, unknown> = {};
+            try {
+              data = JSON.parse(rawData);
+            } catch {
+              continue;
+            }
+
+            if (eventName === "progress") {
+              const notif = data as {
+                type?: string;
+                event?: {
+                  phase?: string;
+                  pipelineId?: string;
+                  status?: string;
+                  details?: { stageId?: string };
+                  errorMessage?: string;
+                };
+              };
+              const phase = notif.event?.phase;
+              const pipelineId = notif.event?.pipelineId;
+              const type = notif.type;
+              const stageId = notif.event?.details?.stageId;
+
+              // Map backend events to stages
+              if (
+                stageId === "cross-encoder-eval" ||
+                (phase === "relevance_evaluation_started" &&
+                  pipelineId === "advanced-rag")
+              ) {
+                updateStage("cross-encoder-eval", "running");
+              } else if (
+                phase === "relevance_evaluation_completed" &&
+                pipelineId === "advanced-rag"
+              ) {
+                updateStage("cross-encoder-eval", "completed");
+              } else if (
+                stageId === "laya-eval" ||
+                (phase === "relevance_evaluation_started" &&
+                  pipelineId === "laya-rag")
+              ) {
+                updateStage("laya-eval", "running");
+              } else if (
+                phase === "relevance_evaluation_completed" &&
+                pipelineId === "laya-rag"
+              ) {
+                updateStage("laya-eval", "completed");
+              } else if (
+                stageId === "context-prep" &&
+                type === "phase:started"
+              ) {
+                updateStage("context-prep", "running");
+              } else if (
+                stageId === "context-prep" &&
+                type === "phase:completed"
+              ) {
+                updateStage("context-prep", "completed");
+              } else if (
+                stageId === "cross-encoder-gen" &&
+                type === "phase:started"
+              ) {
+                updateStage("cross-encoder-gen", "running");
+              } else if (
+                stageId === "cross-encoder-gen" &&
+                type === "phase:completed"
+              ) {
+                updateStage("cross-encoder-gen", "completed");
+              } else if (stageId === "laya-gen" && type === "phase:started") {
+                updateStage("laya-gen", "running");
+              } else if (stageId === "laya-gen" && type === "phase:completed") {
+                updateStage("laya-gen", "completed");
+              } else if (stageId === "finalizing") {
+                updateStage("finalizing", "running");
+              }
+            } else if (eventName === "complete") {
+              updateStage("finalizing", "completed");
+              setComparisonResult(data.result as ComparisonResult);
+            } else if (eventName === "error") {
+              throw new Error(
+                (data.error as string) || "Comparison execution failed."
+              );
+            }
+          }
+        }
+      } else {
+        // Fallback for standard JSON response
+        const compareData = await compareRes.json();
+        if (!compareData.success) {
+          throw new Error(compareData.error || "Comparison failed.");
+        }
+        setStages(INITIAL_STAGES.map((s) => ({ ...s, status: "completed" })));
+        setComparisonResult(compareData.result);
+      }
     } catch (err: unknown) {
       const msg =
         err instanceof Error
           ? err.message
           : "Unable to evaluate the query. Please make sure Ollama and the required local workers are running.";
       setErrorMessage(msg);
+      setStages((prev) =>
+        prev.map((s) => (s.status === "running" ? { ...s, status: "error" } : s))
+      );
     } finally {
       setIsComparing(false);
-      setComparisonProgress(null);
+      stopTimer();
     }
   };
 
@@ -213,20 +458,12 @@ export default function HomePage() {
               onChangeMaxContextChunks={setMaxContextChunks}
             />
 
-            {/* Loading Indicator during Comparison */}
+            {/* Live Progress Feedback Panel during Comparison */}
             {isComparing && (
-              <div className="p-4 rounded-lg border border-accent-border bg-accent-subtle/50 text-xs text-text-primary flex items-center gap-3 animate-in fade-in duration-150">
-                <Loader2 className="h-4 w-4 text-accent animate-spin shrink-0" />
-                <div className="space-y-0.5">
-                  <div className="font-medium text-accent">
-                    Evaluating candidate passages...
-                  </div>
-                  <p className="text-text-secondary text-[11px]">
-                    {comparisonProgress ||
-                      "Running Cross-Encoder and Laya relevance evaluators, then generating answers with llama3.2:3b."}
-                  </p>
-                </div>
-              </div>
+              <ComparisonProgressPanel
+                stages={stages}
+                elapsedSeconds={elapsedSeconds}
+              />
             )}
 
             {/* Section 03 — RELEVANCE ENGINES */}

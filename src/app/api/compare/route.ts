@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CandidateChunkPool } from "@/lib/types/candidate-pool";
 import { ComparisonMode } from "@/lib/types/comparison";
 import { RAGComparisonOrchestrator } from "@/server/services/rag-comparison-orchestrator";
+import { PipelineNotification, IPipelineObserver } from "@/lib/interfaces/observer";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +71,86 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isStreamingRequested =
+      req.headers.get("accept")?.includes("text/event-stream") ||
+      req.nextUrl.searchParams.get("stream") === "true";
+
     const orchestrator = new RAGComparisonOrchestrator();
+
+    if (isStreamingRequested) {
+      const encoder = new TextEncoder();
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          let isClosed = false;
+
+          const sendEvent = (event: string, data: unknown) => {
+            if (isClosed) return;
+            try {
+              controller.enqueue(
+                encoder.encode(
+                  `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+                )
+              );
+            } catch {
+              isClosed = true;
+            }
+          };
+
+          const observerId = `sse_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          const observer: IPipelineObserver = {
+            id: observerId,
+            onEvent(notification: PipelineNotification) {
+              sendEvent("progress", {
+                type: notification.type,
+                event: notification.event,
+              });
+            },
+          };
+
+          orchestrator.getObservable().addObserver(observer);
+
+          try {
+            const result = await orchestrator.compareCandidatePool(
+              {
+                ...candidatePool,
+                query: effectiveQuery,
+              },
+              {
+                mode,
+                topN,
+                maxContextChunks,
+                generationOptions,
+              }
+            );
+            sendEvent("complete", { success: true, result });
+          } catch (err: unknown) {
+            const message =
+              err instanceof Error
+                ? err.message
+                : "Internal comparison failure";
+            sendEvent("error", { success: false, error: message });
+          } finally {
+            orchestrator.getObservable().removeObserver(observerId);
+            if (!isClosed) {
+              try {
+                controller.close();
+              } catch {
+                // Ignore
+              }
+            }
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
+      });
+    }
 
     const result = await orchestrator.compareCandidatePool(
       {

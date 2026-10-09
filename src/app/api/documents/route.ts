@@ -6,11 +6,13 @@ export async function GET() {
     const vectorStore = getGlobalVectorStore();
     const docIds = await vectorStore.listDocuments();
     const totalEntries = await vectorStore.count();
+    const documents = await vectorStore.getIndexedDocumentsSummary();
 
     return NextResponse.json({
       success: true,
       documentIds: docIds,
       totalChunksIndexed: totalEntries,
+      documents,
     });
   } catch (err) {
     return NextResponse.json(

@@ -77,7 +77,7 @@ export function DocumentIngestionCard({
     }
   };
 
-  const isReady = !!indexedDoc || totalChunks > 0;
+  const isReady = Boolean(indexedDoc && totalChunks > 0);
 
   return (
     <section className="space-y-3">
@@ -112,7 +112,7 @@ export function DocumentIngestionCard({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="text-sm font-semibold text-text-primary">
-                {indexedDoc?.filename || "demo_document.pdf"}
+                {indexedDoc?.filename || "Indexed Document"}
               </div>
               <div className="text-xs text-text-muted flex items-center gap-2">
                 {indexedDoc?.pageCount ? (

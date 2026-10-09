@@ -38,6 +38,13 @@ export interface LocalVectorStoreOptions {
   autoSave?: boolean;
 }
 
+export interface DocumentSummary {
+  documentId: string;
+  filename: string;
+  chunkCount: number;
+  pageCount?: number;
+}
+
 /**
  * [LOCAL VECTOR STORE IMPLEMENTATION]
  * Lightweight, zero-native-dependency, persistent vector index for local RAG benchmarking.
@@ -188,6 +195,44 @@ export class LocalVectorStore implements IVectorStore {
       docIds.add(entry.documentId);
     }
     return Array.from(docIds);
+  }
+
+  async getIndexedDocumentsSummary(): Promise<DocumentSummary[]> {
+    await this.load();
+    const map = new Map<
+      string,
+      { filename: string; chunkCount: number; maxPage?: number }
+    >();
+
+    for (const entry of this.entries.values()) {
+      const docId = entry.documentId;
+      const existing = map.get(docId);
+      const filename =
+        entry.source ||
+        (entry.metadata?.filename as string) ||
+        "Document";
+      const page = entry.pageNumber;
+
+      if (!existing) {
+        map.set(docId, {
+          filename,
+          chunkCount: 1,
+          maxPage: page,
+        });
+      } else {
+        existing.chunkCount += 1;
+        if (page && (!existing.maxPage || page > existing.maxPage)) {
+          existing.maxPage = page;
+        }
+      }
+    }
+
+    return Array.from(map.entries()).map(([documentId, info]) => ({
+      documentId,
+      filename: info.filename,
+      chunkCount: info.chunkCount,
+      pageCount: info.maxPage,
+    }));
   }
 
   async deleteDocument(documentId: string): Promise<number> {
