@@ -71,6 +71,8 @@ export interface CandidateChunkDecision {
   laya: {
     selected: boolean;
     decision: "keep" | "drop";
+    keepProbability?: number;
+    threshold?: number;
   };
 }
 
@@ -199,6 +201,7 @@ export interface BenchmarkRunMetadata {
   datasetVersion: string;
   mode: ComparisonMode;
   contextBudget?: number;
+  layaThreshold?: number;
   runsPerQuery: number;
   llmModel: string;
   crossEncoderModel: string;

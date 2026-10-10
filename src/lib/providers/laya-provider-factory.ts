@@ -4,13 +4,24 @@ import { MockLayaProvider } from "./mock-laya-provider";
 
 export type LayaProviderType = "python" | "mock";
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __layaProviderInstanceMap: Map<string, LayaProvider> | undefined;
+}
+
 /**
  * [FACTORY PATTERN IMPLEMENTATION]
  * Instantiates and caches the active LayaProvider.
  * Enables switching between live Python runtime and offline deterministic mocks.
+ * Attached to globalThis to prevent orphan worker processes during Next.js dev reloads.
  */
 export class LayaProviderFactory {
-  private static instanceMap: Map<string, LayaProvider> = new Map();
+  private static get instanceMap(): Map<string, LayaProvider> {
+    if (!globalThis.__layaProviderInstanceMap) {
+      globalThis.__layaProviderInstanceMap = new Map();
+    }
+    return globalThis.__layaProviderInstanceMap;
+  }
 
   public static getProvider(
     type?: LayaProviderType,

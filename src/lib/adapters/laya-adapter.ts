@@ -13,6 +13,7 @@ export interface LayaAdapterFilterResult {
   isColdStart: boolean;
   layaModel: string;
   rawResponse?: LayaRawResponse;
+  filteringThreshold?: number;
 }
 
 /**
@@ -30,12 +31,25 @@ export class LayaAdapter implements ILayaAdapter {
   /**
    * Adapts candidate chunks to Laya format, invokes batch evaluation,
    * validates decisions, and returns partitioned domain chunks.
+   *
+   * @param query The user question
+   * @param chunks Retrieved candidate chunks
+   * @param options Filtering configuration (e.g. threshold on keepProbability)
    */
   async filterCandidates(
     query: string,
     chunks: Chunk[],
-    _options?: { topK?: number; threshold?: number }
+    options?: { topK?: number; threshold?: number }
   ): Promise<LayaAdapterFilterResult> {
+    if (options?.threshold !== undefined) {
+      const t = options.threshold;
+      if (typeof t !== "number" || isNaN(t) || t < 0.0 || t > 1.0) {
+        throw new Error(
+          `Invalid Laya filtering threshold: ${t}. Threshold must be a number between 0.0 and 1.0.`
+        );
+      }
+    }
+
     if (!query || !query.trim()) {
       throw new Error("Query cannot be empty for Laya relevance filtering.");
     }
@@ -49,6 +63,7 @@ export class LayaAdapter implements ILayaAdapter {
         modelLoadLatencyMs: 0,
         isColdStart: false,
         layaModel: this.provider.model,
+        filteringThreshold: options?.threshold,
       };
     }
 
@@ -86,7 +101,37 @@ export class LayaAdapter implements ILayaAdapter {
         );
       }
 
-      const isRetained = decision === "keep";
+      const threshold = options?.threshold;
+      let meetsThreshold = true;
+      let filteringReason = "";
+      const rawProb = decisionObj.keepProbability;
+      const hasValidProb =
+        typeof rawProb === "number" && !isNaN(rawProb) && isFinite(rawProb);
+
+      if (threshold !== undefined) {
+        if (hasValidProb) {
+          meetsThreshold = rawProb >= threshold;
+          if (decision === "keep") {
+            filteringReason = meetsThreshold
+              ? `retained: P(keep)=${rawProb.toFixed(4)} >= ${threshold}`
+              : `dropped: P(keep)=${rawProb.toFixed(4)} < ${threshold}`;
+          } else {
+            filteringReason = `dropped: laya decision was drop (P(keep)=${rawProb.toFixed(4)})`;
+          }
+        } else {
+          // Missing, null, NaN or non-finite probability when threshold is configured
+          // MUST NEVER be treated as an automatic keep.
+          meetsThreshold = false;
+          filteringReason = `dropped: missing or invalid keepProbability in strict mode (threshold=${threshold})`;
+        }
+      } else {
+        filteringReason =
+          decision === "keep"
+            ? `retained: laya decision was keep${hasValidProb ? ` (P(keep)=${rawProb.toFixed(4)})` : ""}`
+            : `dropped: laya decision was drop${hasValidProb ? ` (P(keep)=${rawProb.toFixed(4)})` : ""}`;
+      }
+
+      const isRetained = decision === "keep" && meetsThreshold;
       const originalRank = chunk.rank ?? i + 1;
       const originalRetrievalScore = chunk.retrievalScore ?? 0;
 
@@ -100,6 +145,7 @@ export class LayaAdapter implements ILayaAdapter {
         layaConfidence: decisionObj.confidence,
         originalRank,
         originalRetrievalScore,
+        relevanceRationale: filteringReason,
         metadata: {
           ...chunk.metadata,
           originalRank,
@@ -110,6 +156,8 @@ export class LayaAdapter implements ILayaAdapter {
           confidence: decisionObj.confidence,
           answerConfidence: decisionObj.answerConfidence,
           rawOutput: decisionObj.rawModelOutput,
+          filteringReason,
+          meetsThreshold,
         },
       };
 
@@ -122,11 +170,16 @@ export class LayaAdapter implements ILayaAdapter {
     }
 
     const rawResponse: LayaRawResponse = {
-      results: response.decisions.map((d) => ({
-        id: d.chunkId,
-        score: d.keepProbability ?? (d.decision === "keep" ? 1.0 : 0.0),
-        accepted: d.decision === "keep",
-        reason: `Laya decision: ${d.decision} (confidence: ${d.confidence ?? "N/A"})`,
+      results: allCandidates.map((c) => ({
+        id: c.id,
+        score:
+          typeof c.keepProbability === "number"
+            ? c.keepProbability
+            : c.layaDecision === "keep"
+              ? 1.0
+              : 0.0,
+        accepted: c.isRetained,
+        reason: c.relevanceRationale || `Laya decision: ${c.layaDecision}`,
       })),
       processing_time_ms: response.evaluationLatencyMs,
       metadata: {
@@ -145,6 +198,7 @@ export class LayaAdapter implements ILayaAdapter {
       isColdStart: response.isColdStart,
       layaModel: response.model,
       rawResponse,
+      filteringThreshold: options?.threshold,
     };
   }
 }

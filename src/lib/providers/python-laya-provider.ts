@@ -18,10 +18,10 @@ export interface PythonLayaProviderConfig {
   /** Path to laya_worker.py script */
   workerScriptPath?: string;
 
-  /** Startup timeout in milliseconds (default: 60000ms for PyTorch cold load) */
+  /** Startup timeout in milliseconds (default: 120000ms for PyTorch cold load) */
   startupTimeoutMs?: number;
 
-  /** Per-request evaluation timeout in milliseconds (default: 30000ms) */
+  /** Per-request evaluation timeout in milliseconds (default: 120000ms) */
   requestTimeoutMs?: number;
 }
 
@@ -35,6 +35,13 @@ interface PendingRequest {
  * [PYTHON LAYA PROVIDER]
  * Manages a persistent Python child process executing laya.Agent via line-delimited JSON IPC.
  * Eliminates repeated ~25s PyTorch cold-start weight loads across requests.
+ *
+ * Hardened for Windows & PyTorch stability:
+ * 1. Enforces single-worker serialization so stdin/stdout IPC never desynchronizes.
+ * 2. Uses explicit request ID matching instead of fragile FIFO arrays.
+ * 3. Never kills the worker on single query timeouts, avoiding STATUS_ACCESS_VIOLATION (0xC0000005).
+ * 4. Limits CPU threads and disables Rayon tokenizer parallelism to prevent thread collisions.
+ * 5. Automatically restarts the worker cleanly if the underlying process ever terminates.
  */
 export class PythonLayaProvider implements LayaProvider {
   readonly id = "python";
@@ -47,10 +54,11 @@ export class PythonLayaProvider implements LayaProvider {
   private childProcess: ChildProcess | null = null;
   private isReady: boolean = false;
   private initPromise: Promise<void> | null = null;
-  private pendingQueue: PendingRequest[] = [];
+  private pendingRequests: Map<string, PendingRequest> = new Map();
+  private requestQueue: Promise<void> = Promise.resolve();
   private stdoutBuffer: string = "";
+  private recentStderr: string = "";
   private modelLoadLatencyMs: number = 0;
-  private isFirstQuery: boolean = true;
 
   constructor(config?: PythonLayaProviderConfig) {
     const defaultModel =
@@ -65,12 +73,12 @@ export class PythonLayaProvider implements LayaProvider {
       config?.startupTimeoutMs ??
       (process.env.LAYA_STARTUP_TIMEOUT_MS
         ? Number(process.env.LAYA_STARTUP_TIMEOUT_MS)
-        : 90000);
+        : 120000);
     this.requestTimeoutMs =
       config?.requestTimeoutMs ??
       (process.env.LAYA_REQUEST_TIMEOUT_MS
         ? Number(process.env.LAYA_REQUEST_TIMEOUT_MS)
-        : 90000);
+        : 120000);
   }
 
   /**
@@ -88,12 +96,23 @@ export class PythonLayaProvider implements LayaProvider {
     this.initPromise = new Promise<void>((resolve, reject) => {
       const args = [this.workerScriptPath, "--model", this.model];
 
+      // Windows stability: prevent OpenMP / Rust Rayon thread collisions and enforce unbuffered I/O
+      const env = {
+        ...process.env,
+        PYTHONUNBUFFERED: "1",
+        TOKENIZERS_PARALLELISM: "false",
+        KMP_DUPLICATE_LIB_OK: "TRUE",
+        OMP_NUM_THREADS: "4",
+      };
+
       const child = spawn(this.pythonPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env, PYTHONUNBUFFERED: "1" },
+        env,
       });
 
       this.childProcess = child;
+      this.recentStderr = "";
+      this.stdoutBuffer = "";
       let startupResolved = false;
 
       const timer = setTimeout(() => {
@@ -102,7 +121,7 @@ export class PythonLayaProvider implements LayaProvider {
           this.dispose();
           reject(
             new Error(
-              `Laya worker failed to start within ${this.startupTimeoutMs}ms.`
+              `Laya worker failed to start within ${this.startupTimeoutMs}ms for model "${this.model}".`
             )
           );
         }
@@ -127,12 +146,26 @@ export class PythonLayaProvider implements LayaProvider {
               this.isReady = true;
               this.modelLoadLatencyMs = data.modelLoadLatencyMs || 0;
               resolve();
-              return;
+              continue; // Do not return early; process any subsequent lines
             }
 
-            // Handle evaluation responses
-            if (this.pendingQueue.length > 0) {
-              const pending = this.pendingQueue.shift()!;
+            // Handle evaluation responses by request ID
+            const reqId = data.id;
+            let pending: PendingRequest | undefined;
+
+            if (reqId && this.pendingRequests.has(reqId)) {
+              pending = this.pendingRequests.get(reqId);
+              this.pendingRequests.delete(reqId);
+            } else if (!reqId && this.pendingRequests.size > 0) {
+              // Fallback for responses without ID (e.g. legacy workers)
+              const firstKey = this.pendingRequests.keys().next().value;
+              if (firstKey) {
+                pending = this.pendingRequests.get(firstKey);
+                this.pendingRequests.delete(firstKey);
+              }
+            }
+
+            if (pending) {
               clearTimeout(pending.timeoutId);
 
               if (data.success === false) {
@@ -158,6 +191,7 @@ export class PythonLayaProvider implements LayaProvider {
 
       child.stderr.on("data", (chunk: Buffer) => {
         const text = chunk.toString("utf-8");
+        this.recentStderr = (this.recentStderr + text).slice(-4096);
         if (text.includes("Error:") || text.includes("Exception:")) {
           console.warn("[LayaWorker STDERR]:", text.trim());
         }
@@ -176,14 +210,23 @@ export class PythonLayaProvider implements LayaProvider {
         this.isReady = false;
         this.childProcess = null;
         this.initPromise = null;
+        const errDetail = this.recentStderr.trim()
+          ? ` (stderr: ${this.recentStderr.trim().slice(-300)})`
+          : "";
+        const exitErr = new Error(
+          `Laya worker process exited with code ${code}${errDetail}`
+        );
+
         if (!startupResolved) {
           startupResolved = true;
           clearTimeout(timer);
-          reject(new Error(`Laya worker exited prematurely with code ${code}`));
+          reject(
+            new Error(
+              `Laya worker exited prematurely with code ${code}${errDetail}`
+            )
+          );
         }
-        this.flushPendingErrors(
-          new Error(`Laya worker process exited with code ${code}`)
-        );
+        this.flushPendingErrors(exitErr);
       });
     });
 
@@ -191,74 +234,88 @@ export class PythonLayaProvider implements LayaProvider {
   }
 
   private flushPendingErrors(err: Error): void {
-    while (this.pendingQueue.length > 0) {
-      const pending = this.pendingQueue.shift()!;
+    const pendingList = Array.from(this.pendingRequests.values());
+    this.pendingRequests.clear();
+    for (const pending of pendingList) {
       clearTimeout(pending.timeoutId);
       pending.reject(err);
     }
   }
 
+  /**
+   * Evaluates relevance for candidate passages against the user query.
+   * Serializes requests so concurrent callers never interleave lines on stdin.
+   */
   async evaluateRelevance(
     query: string,
     candidates: LayaCandidatePayload[]
   ): Promise<LayaEvaluationResponse> {
-    await this.ensureInitialized();
+    const reqId = `laya_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
-    if (!this.childProcess || !this.childProcess.stdin) {
-      throw new Error("Laya child process is not available.");
-    }
+    const executeEvaluation = async (): Promise<LayaEvaluationResponse> => {
+      await this.ensureInitialized();
 
-    return new Promise<LayaEvaluationResponse>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        const idx = this.pendingQueue.findIndex((p) => p.timeoutId === timeoutId);
-        if (idx !== -1) {
-          this.pendingQueue.splice(idx, 1);
-          this.dispose();
-          reject(
-            new Error(
-              `Laya evaluation timed out after ${this.requestTimeoutMs}ms.`
-            )
-          );
-        }
-      }, this.requestTimeoutMs);
-
-      this.pendingQueue.push({ resolve, reject, timeoutId });
-
-      if (!this.childProcess || !this.childProcess.stdin) {
-        clearTimeout(timeoutId);
-        const idx = this.pendingQueue.findIndex(
-          (p) => p.timeoutId === timeoutId
-        );
-        if (idx !== -1) this.pendingQueue.splice(idx, 1);
-        reject(new Error("Laya worker process or stdin is not available."));
-        return;
+      if (!this.childProcess || !this.childProcess.stdin || this.childProcess.killed) {
+        throw new Error("Laya child process is not available.");
       }
 
-      const payload = JSON.stringify({
-        action: "evaluate",
-        query,
-        candidates,
-      });
-
-      this.childProcess.stdin.write(payload + "\n", (err) => {
-        if (err) {
-          clearTimeout(timeoutId);
-          const idx = this.pendingQueue.findIndex(
-            (p) => p.timeoutId === timeoutId
+      return new Promise<LayaEvaluationResponse>((resolve, reject) => {
+        // Request timeout only starts once this specific evaluation begins execution
+        const timeoutId = setTimeout(() => {
+          this.pendingRequests.delete(reqId);
+          // Do NOT call this.dispose() on single request timeout!
+          // Forcefully killing the worker causes 0xC0000005 access violations.
+          reject(
+            new Error(
+              `Laya evaluation timed out after ${this.requestTimeoutMs}ms for query "${query.slice(0, 50)}...".`
+            )
           );
-          if (idx !== -1) this.pendingQueue.splice(idx, 1);
-          reject(new Error(`Failed to write to Laya worker: ${err.message}`));
-        }
+        }, this.requestTimeoutMs);
+
+        this.pendingRequests.set(reqId, { resolve, reject, timeoutId });
+
+        const payload = JSON.stringify({
+          id: reqId,
+          action: "evaluate",
+          query,
+          candidates,
+        });
+
+        this.childProcess!.stdin!.write(payload + "\n", (err) => {
+          if (err) {
+            clearTimeout(timeoutId);
+            this.pendingRequests.delete(reqId);
+            reject(new Error(`Failed to write to Laya worker: ${err.message}`));
+          }
+        });
       });
-    });
+    };
+
+    // Serialize execution through a promise queue to guarantee single-writer IPC
+    const executionPromise = this.requestQueue.then(
+      () => executeEvaluation(),
+      () => executeEvaluation()
+    );
+
+    // Keep the queue alive for subsequent callers regardless of outcome
+    this.requestQueue = executionPromise.then(
+      () => {},
+      () => {}
+    );
+
+    return executionPromise;
   }
 
   async checkHealth(): Promise<{ isAvailable: boolean; message?: string }> {
     try {
       await this.ensureInitialized();
+      const isActive =
+        this.isReady && !!this.childProcess && !this.childProcess.killed;
       return {
-        isAvailable: this.isReady,
-        message: `Laya worker active (model: ${this.model})`,
+        isAvailable: isActive,
+        message: isActive
+          ? `Laya worker active (model: ${this.model})`
+          : "Laya worker process is not ready",
       };
     } catch (err: unknown) {
       return {
@@ -272,7 +329,7 @@ export class PythonLayaProvider implements LayaProvider {
     if (this.childProcess && !this.childProcess.killed) {
       try {
         this.childProcess.stdin?.end();
-        this.childProcess.kill("SIGTERM");
+        this.childProcess.kill();
       } catch {
         // Process cleanup
       }

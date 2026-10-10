@@ -75,6 +75,7 @@ export default function HomePage() {
   const [mode, setMode] = React.useState<ComparisonMode>("native");
   const [topK, setTopK] = React.useState<number>(10);
   const [maxContextChunks, setMaxContextChunks] = React.useState<number>(5);
+  const [layaThreshold, setLayaThreshold] = React.useState<number>(0.75);
 
   // Execution & results state
   const [candidatePool, setCandidatePool] =
@@ -241,6 +242,7 @@ export default function HomePage() {
           mode,
           topN: mode === "context-budget" ? maxContextChunks : 5,
           maxContextChunks,
+          layaThreshold,
         }),
       });
 
@@ -456,6 +458,8 @@ export default function HomePage() {
               onChangeTopK={setTopK}
               maxContextChunks={maxContextChunks}
               onChangeMaxContextChunks={setMaxContextChunks}
+              layaThreshold={layaThreshold}
+              onChangeLayaThreshold={setLayaThreshold}
             />
 
             {/* Live Progress Feedback Panel during Comparison */}

@@ -370,14 +370,65 @@ npx tsx scripts/run-benchmark.ts --mock --mode=native
 # 2. Run deterministic CI mock benchmark (Context-Budget Mode, budget=3)
 npx tsx scripts/run-benchmark.ts --mock --mode=context-budget --budget=3
 
-# 3. Run live benchmark with local Python workers and Ollama llama3.2:3b
+# 3. Run experimental strict Laya filtering benchmark (tau = 0.75)
+npx tsx scripts/run-benchmark.ts --mock --laya-threshold=0.75
+
+# 4. Run live benchmark with local Python workers and Ollama llama3.2:3b
 npx tsx scripts/run-benchmark.ts --mode=native --limit=5
 
-# 4. Run automated test suite verifying all 91 unit and regression tests
+# 5. Run automated test suite verifying all 109 unit and regression tests
 npm test
 
-# 5. Build production bundle
+# 6. Build production bundle
 npm run build
 ```
 
 Raw result artifacts are persistently stored as JSON files in `data/benchmark/results/`.
+
+---
+
+## 17. Strict Laya Filtering & Token-Efficiency Experiment
+
+### 17.1 Problem & Methodology
+In native Laya filtering, the binary classification head operates with a default decision threshold of $P(\text{keep}) > 0.50$. Because ModernBERT assigns probabilities between 0.52 and 0.75 to tangentially related or distractor passages, native Laya retains an average of **4.08 chunks per query** out of 4.72 initial candidates across the 36-query suite.
+
+To investigate whether tighter relevance filtering can reduce prompt tokens without sacrificing downstream answer quality, a configurable threshold parameter $\tau \in [0.0, 1.0]$ was introduced on Laya's calibrated $P(\text{keep})$:
+$$\text{isRetained} = (\text{decision} == \text{"keep"}) \land (P(\text{keep}) \ge \tau)$$
+When $\tau$ is unconfigured or $\le 0.50$, native baseline behavior is 100% preserved.
+
+### 17.2 Empirical Calibration Sweep ($N=170$ Chunks Across 36 Queries)
+A full-corpus calibration sweep across all 36 evaluation cases yielded the following empirical probability distributions:
+- **Ground-Truth Relevant Chunks ($N=55$):** Mean $P(\text{keep}) = 0.7999$, Median $= 0.8407$, IQR $= [0.7433, 0.8660]$, Max $= 0.9337$.
+- **Ground-Truth Irrelevant Distractors ($N=115$):** Mean $P(\text{keep}) = 0.6605$, Median $= 0.7120$, IQR $= [0.5461, 0.7869]$, Max $= 0.9195$.
+
+| Threshold $\tau$ | Retained Chunks | Retained % | Relevance Precision | Relevance Recall | Relevance F1 | Retained Chunks / Query |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **0.50 (Baseline)** | 147 / 170 | 86.5% | 0.3673 | **0.9818** | 0.5347 | 4.08 |
+| **0.55** | 139 / 170 | 81.8% | 0.3885 | 0.9818 | 0.5567 | 3.86 |
+| **0.60** | 130 / 170 | 76.5% | 0.4000 | 0.9455 | 0.5622 | 3.61 |
+| **0.65 (High-Recall Strict)** | 124 / 170 | 72.9% | 0.4194 | 0.9455 | 0.5810 | 3.44 |
+| **0.70** | 103 / 170 | 60.6% | 0.4175 | 0.7818 | 0.5443 | 2.86 |
+| **0.75 (Balanced Max-F1)** | 79 / 170 | 46.5% | 0.5063 | 0.7273 | **0.5970** | **2.19** |
+| **0.80 (Aggressive)** | 60 / 170 | 35.3% | 0.5667 | 0.6182 | 0.5913 | 1.67 |
+| **0.85** | 34 / 170 | 20.0% | **0.7059** | 0.4364 | 0.5393 | 0.94 |
+
+*Methodological note: As the dataset contains 36 cases without a separate held-out split, $\tau = 0.75$ represents an empirical calibration point and should not be claimed as an independent held-out generalization.*
+
+### 17.3 Token-Efficiency Impact (Measured via Ollama Tokenizer `prompt_eval_count`)
+Measuring exact prompt tokens evaluated by `llama3.2:3b` demonstrates substantial prompt economy:
+
+| Benchmark Case | Category | Cross-Encoder Retained / Tokens | Laya Baseline ($\tau=0.50$) | Laya Strict ($\tau=0.75$) | Prompt Token Savings vs CE | Ground-Truth Recall |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| `bench-norm-01` | `NORMAL` | 4 chunks / 335 tokens | 4 chunks / 335 tokens | **1 chunk / 160 tokens** | **-52.2% (-175 tokens)** | 100% (No facts lost) |
+| `bench-dist-01` | `DISTRACTOR_HEAVY` | 5 chunks / 385 tokens | 4 chunks / 385 tokens | **3 chunks / 283 tokens** | **-26.5% (-102 tokens)** | 100% (No facts lost) |
+| `bench-noans-01` | `NO_ANSWER` | 4 chunks / 321 tokens | 3 chunks / 279 tokens | **2 chunks / 234 tokens** | **-27.1% (-87 tokens)** | 100% (Correct refusal) |
+| `bench-multi-01` | `MULTI_CHUNK` | 5 chunks / 391 tokens | 5 chunks / 391 tokens | **2 chunks / 242 tokens** | **-38.1% (-149 tokens)** | 100% (Both MLM+NSP kept) |
+
+### 17.4 Downstream Answer Quality & Recall Tradeoffs
+1. **Single-Fact & Normal Queries:** Strict filtering ($\tau=0.75$) achieves **52.2% prompt token reduction** while preserving 100% of required facts and identical LLM answer correctness.
+2. **Multi-Chunk Queries:** In queries where 2 passages are required (`MULTI_CHUNK`), $\tau=0.75$ retains both essential passages while stripping 3 surrounding distractor passages (-38.1% prompt tokens).
+3. **Long Context Pools (`LONG_CONTEXT`):** When candidate pools are large ($K=8$), aggressive filtering with $\tau \ge 0.75$ drops recall to 53.3% because some peripheral evidentiary chunks score $P(\text{keep}) \in [0.65, 0.74]$.
+4. **Pareto Tradeoff Summary:**
+   - **Baseline Laya ($\tau=0.50$):** High recall (98.2%), but bloated context (4.08 chunks/query).
+   - **Mild Strictness ($\tau=0.65$):** Preserves 94.55% recall while eliminating 15.6% of bloated chunks.
+   - **Balanced Strictness ($\tau=0.75$):** Peak F1 (0.5970), cuts retained chunks by **46.3%** (2.19 chunks/query), reducing prompt tokens by 26–52% on representative queries with zero fact loss on standard retrieval.

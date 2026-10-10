@@ -70,11 +70,13 @@ The benchmark supports two distinct evaluation modes:
 
 ### Mode A: Native Strategy Mode
 Measures what happens when each approach operates in its native design configuration:
-- **Path A (Cross-Encoder):** Selects configured `topN` (default: 5) highest-scoring reranked passages.
-- **Path B (Laya):** Retains all passages where Laya emitted binary `KEEP` gating decisions.
+- **Path A (Cross-Encoder):** Selects configured `topN` (default: 5) highest-scoring reranked passages using `ms-marco-MiniLM-L-6-v2`.
+- **Path B (Laya Baseline & Strict Filtering):**
+  - **Baseline ($\tau = \text{undefined}$ or $\le 0.50$):** Retains all passages where Laya emitted binary `KEEP` gating decisions ($P(\text{keep}) > 0.50$).
+  - **Experimental Strict Gating ($\tau \in (0.50, 1.00]$):** Retains passages where Laya emitted `KEEP` **and** the calibrated probability satisfies $P(\text{keep}) \ge \tau$ (e.g. $\tau = 0.75$). This filters out tangentially related distractor passages that receive weak positive scores ($0.52 \le P(\text{keep}) \le 0.74$), delivering substantial downstream prompt-token reductions.
 
 ### Mode B: Context-Budget Mode
-Enforces an equal maximum context budget (`maxContextChunks`, e.g., 5) across both paths:
+Enforces an equal maximum context budget (`maxContextChunks`, e.g., 3 or 5) across both paths:
 - **Path A (Cross-Encoder):** Selects top $N \le \text{budget}$ reranked passages.
 - **Path B (Laya):** Retains `KEEP` candidates. If $\text{count}(\text{KEEP}) > \text{budget}$, applies the deterministic benchmark constraint:
   $$\text{selected} = \text{retainedCandidates}[0:\text{budget}]$$

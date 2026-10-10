@@ -4,8 +4,21 @@ Provides persistent batch inference using sentence-transformers CrossEncoder.
 Communicates via JSON-lines over stdin/stdout.
 """
 import sys
+import os
+
+# Prevent Windows OpenMP / HuggingFace Rayon clashes
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import json
 import time
+
+try:
+    import torch
+    num_threads = min(4, max(1, os.cpu_count() or 1))
+    torch.set_num_threads(num_threads)
+except Exception:
+    pass
 
 def main():
     model_name = sys.argv[1] if len(sys.argv) > 1 else "cross-encoder/ms-marco-MiniLM-L-6-v2"

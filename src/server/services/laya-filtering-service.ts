@@ -47,7 +47,7 @@ export class LayaRelevanceFilteringService {
    */
   async filterPool(
     pool: CandidateChunkPool,
-    _options?: LayaFilteringOptions
+    options?: LayaFilteringOptions
   ): Promise<LayaFilteredPool> {
     if (!pool) {
       throw new Error("CandidateChunkPool cannot be null or undefined.");
@@ -108,13 +108,15 @@ export class LayaRelevanceFilteringService {
         retainedCandidates: [],
         discardedCandidates: [],
         metrics: emptyMetrics,
+        filteringThreshold: options?.threshold,
       };
     }
 
     // 1. Evaluate all candidates via adapter
     const filterResult = await this.adapter.filterCandidates(
       query,
-      candidateChunks
+      candidateChunks,
+      options
     );
 
     const totalDuration = performance.now() - startTime;
@@ -161,6 +163,7 @@ export class LayaRelevanceFilteringService {
       retainedCandidates: filterResult.retainedChunks,
       discardedCandidates: filterResult.discardedChunks,
       metrics,
+      filteringThreshold: options?.threshold,
     };
 
     // Emit observer event: Relevance evaluation completed

@@ -17,6 +17,8 @@ interface QuerySectionProps {
   onChangeTopK: (topK: number) => void;
   maxContextChunks: number;
   onChangeMaxContextChunks: (val: number) => void;
+  layaThreshold: number;
+  onChangeLayaThreshold: (val: number) => void;
 }
 
 const SAMPLE_QUESTIONS = [
@@ -38,6 +40,8 @@ export function QuerySection({
   onChangeTopK,
   maxContextChunks,
   onChangeMaxContextChunks,
+  layaThreshold,
+  onChangeLayaThreshold,
 }: QuerySectionProps) {
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
@@ -100,7 +104,7 @@ export function QuerySection({
       {/* Collapsed Advanced Options Panel */}
       {showAdvanced && (
         <div className="p-4 rounded-lg border border-border bg-surface-elevated/40 space-y-4 text-xs animate-in fade-in duration-150">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Mode selection */}
             <div>
               <label className="block text-text-secondary font-medium mb-1.5">
@@ -162,6 +166,23 @@ export function QuerySection({
                 <option value={3}>3 chunks</option>
                 <option value={5}>5 chunks (Standard)</option>
                 <option value={8}>8 chunks</option>
+              </select>
+            </div>
+
+            {/* Laya Strictness Threshold */}
+            <div>
+              <label className="block text-text-secondary font-medium mb-1.5">
+                Laya Strictness (τ)
+              </label>
+              <select
+                value={layaThreshold}
+                onChange={(e) => onChangeLayaThreshold(Number(e.target.value))}
+                className="w-full h-8 rounded border border-border bg-white px-2.5 text-xs text-text-primary focus:outline-none focus:border-accent font-mono"
+              >
+                <option value={0.50}>τ = 0.50 (Baseline / Native)</option>
+                <option value={0.65}>τ = 0.65 (Moderate)</option>
+                <option value={0.75}>τ = 0.75 (Strict — Default)</option>
+                <option value={0.80}>τ = 0.80 (Aggressive)</option>
               </select>
             </div>
           </div>

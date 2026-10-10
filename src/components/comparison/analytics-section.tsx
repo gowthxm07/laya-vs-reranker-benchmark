@@ -86,6 +86,23 @@ export function AnalyticsSection({
       ) : (
         /* Populated Results View */
         <div className="space-y-6">
+          {/* Strict Filtering Diagnostic Indicator */}
+          {comparisonResult.laya.filteringThreshold !== undefined && (
+            <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-xs font-mono text-sky-950 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                <span className="font-semibold">
+                  Laya strict filtering: &tau; = {comparisonResult.laya.filteringThreshold.toFixed(2)} | Candidates: {comparisonResult.sharedRetrieval.candidateCount} | Retained: {comparisonResult.laya.retainedCount} | Dropped: {comparisonResult.laya.discardedCount}
+                </span>
+              </div>
+              <span className="text-[11px] text-sky-700 font-sans">
+                {comparisonResult.laya.promptTokens < comparisonResult.crossEncoder.promptTokens
+                  ? `${Math.round(((comparisonResult.crossEncoder.promptTokens - comparisonResult.laya.promptTokens) / comparisonResult.crossEncoder.promptTokens) * 100)}% prompt token reduction vs Cross-Encoder`
+                  : `${comparisonResult.laya.discardedCount} passages filtered before synthesis`}
+              </span>
+            </div>
+          )}
+
           {/* Primary Metrics Comparison Table */}
           <div className="border border-border rounded-lg bg-white overflow-hidden">
             <table className="w-full text-xs text-left">
@@ -131,6 +148,30 @@ export function AnalyticsSection({
                   </td>
                   <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
                     {layaMetrics.f1 !== null ? `${layaMetrics.f1.toFixed(1)}%` : "N/A — unannotated"}
+                  </td>
+                </tr>
+
+                {/* Retained Chunks */}
+                <tr className="hover:bg-surface-elevated/20 transition-colors">
+                  <td className="py-2.5 px-4 text-text-secondary">Retained Chunks</td>
+                  <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
+                    {comparisonResult.crossEncoder.error
+                      ? "N/A — failed"
+                      : `${comparisonResult.crossEncoder.retainedCount} / ${comparisonResult.sharedRetrieval.candidateCount}`}
+                  </td>
+                  <td className="py-2.5 px-4 font-mono font-medium text-text-primary text-right sm:text-left">
+                    {comparisonResult.laya.error
+                      ? "N/A — failed"
+                      : (
+                        <span>
+                          {comparisonResult.laya.retainedCount} / {comparisonResult.sharedRetrieval.candidateCount}
+                          {comparisonResult.laya.filteringThreshold !== undefined && (
+                            <span className="text-text-muted font-mono text-[10px] ml-1">
+                              (&tau; = {comparisonResult.laya.filteringThreshold.toFixed(2)})
+                            </span>
+                          )}
+                        </span>
+                      )}
                   </td>
                 </tr>
 

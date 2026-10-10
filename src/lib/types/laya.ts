@@ -137,4 +137,7 @@ export interface LayaFilteredPool {
 
   /** Performance and reduction metrics */
   metrics: LayaEvaluationMetrics;
+
+  /** Experimental relevance threshold applied to keepProbability (if specified) */
+  filteringThreshold?: number;
 }

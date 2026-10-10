@@ -8,6 +8,11 @@ Eliminates per-request PyTorch model weight loading latency (~25s on CPU).
 
 import sys
 import os
+
+# Crucial Windows stability: prevent OpenMP clashes and HuggingFace Rust Rayon crashes
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import json
 import time
 import argparse
@@ -15,6 +20,16 @@ import warnings
 
 # Suppress noisy library runtime warnings from polluting stdout
 warnings.filterwarnings("ignore")
+
+# Limit PyTorch CPU threads on Windows to prevent thread contention and access violations
+try:
+    import torch
+    num_threads = min(4, max(1, os.cpu_count() or 1))
+    torch.set_num_threads(num_threads)
+    if hasattr(torch, "set_num_interop_threads"):
+        torch.set_num_interop_threads(min(2, max(1, num_threads // 2)))
+except Exception:
+    pass
 
 DEFAULT_MODEL_PATH = r"D:\laya" if os.path.isdir(r"D:\laya") else "convaiinnovations/laya"
 
@@ -81,12 +96,15 @@ def main():
         if not line:
             continue
 
+        req_id = None
         try:
             req = json.loads(line)
+            req_id = req.get("id")
             action = req.get("action", "evaluate")
 
             if action == "health":
                 response = {
+                    "id": req_id,
                     "success": True,
                     "status": "ok",
                     "model": getattr(agent, "model_id", model_path)
@@ -104,6 +122,7 @@ def main():
 
                 if not candidates or len(candidates) == 0:
                     response = {
+                        "id": req_id,
                         "success": True,
                         "decisions": [],
                         "evaluationLatencyMs": 0,
@@ -158,6 +177,7 @@ def main():
                     })
 
                 response = {
+                    "id": req_id,
                     "success": True,
                     "model": getattr(agent, "model_id", model_path),
                     "decisions": decisions,
@@ -175,6 +195,7 @@ def main():
 
         except Exception as err:
             err_response = {
+                "id": req_id,
                 "success": False,
                 "error": str(err)
             }

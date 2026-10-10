@@ -67,10 +67,19 @@ export class PythonCrossEncoderProvider implements CrossEncoderProvider {
     this.readyPromise = new Promise<void>((resolve, reject) => {
       const startLoadTime = performance.now();
       try {
-        const proc = spawn(this.pythonExecutable, [
-          this.workerScriptPath,
-          this.model,
-        ]);
+        const proc = spawn(
+          this.pythonExecutable,
+          [this.workerScriptPath, this.model],
+          {
+            env: {
+              ...process.env,
+              PYTHONUNBUFFERED: "1",
+              TOKENIZERS_PARALLELISM: "false",
+              KMP_DUPLICATE_LIB_OK: "TRUE",
+              OMP_NUM_THREADS: "4",
+            },
+          }
+        );
         this.workerProcess = proc;
 
         const initTimer = setTimeout(() => {

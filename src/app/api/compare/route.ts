@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
       mode = "native",
       topN = 5,
       maxContextChunks = 5,
+      layaThreshold,
       generationOptions,
     } = body as {
       query?: string;
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       mode?: ComparisonMode;
       topN?: number;
       maxContextChunks?: number;
+      layaThreshold?: number;
       generationOptions?: {
         temperature?: number;
         seed?: number;
@@ -120,6 +122,7 @@ export async function POST(req: NextRequest) {
                 mode,
                 topN,
                 maxContextChunks,
+                layaThreshold,
                 generationOptions,
               }
             );
@@ -161,6 +164,7 @@ export async function POST(req: NextRequest) {
         mode,
         topN,
         maxContextChunks,
+        layaThreshold,
         generationOptions,
       }
     );

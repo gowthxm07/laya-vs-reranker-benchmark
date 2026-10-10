@@ -7,6 +7,8 @@ import { CandidateChunkPool } from "../lib/types/candidate-pool";
 import { Chunk } from "../lib/types/chunk";
 import { LayaProvider } from "../lib/interfaces/laya-provider";
 import { LayaDecisionType } from "../lib/types/laya";
+import { LayaProviderFactory } from "../lib/providers/laya-provider-factory";
+import { PythonLayaProvider } from "../lib/providers/python-laya-provider";
 
 describe("Phase 4 — Laya Relevance Evaluation & Semantic Pruning", () => {
   let mockProvider: MockLayaProvider;
@@ -335,5 +337,25 @@ describe("Phase 4 — Laya Relevance Evaluation & Semantic Pruning", () => {
     expect(result.metrics.averageCandidateLatencyMs).toBeGreaterThanOrEqual(0);
     expect(result.metrics.totalLatencyMs).toBeGreaterThanOrEqual(0);
     expect(typeof result.metrics.isColdStart).toBe("boolean");
+  });
+
+  // Test 13 — Provider Factory globalThis caching prevents orphan worker processes
+  it("Scenario 13: LayaProviderFactory caches providers on globalThis across module re-evaluations", () => {
+    const mock1 = LayaProviderFactory.getProvider("mock");
+    const mock2 = LayaProviderFactory.getProvider("mock");
+    expect(mock1).toBe(mock2);
+    expect(globalThis.__layaProviderInstanceMap?.has("mock:default")).toBe(true);
+  });
+
+  // Test 14 — PythonLayaProvider constructor defaults and configuration
+  it("Scenario 14: PythonLayaProvider configures default model and non-fatal timeouts", () => {
+    const provider = new PythonLayaProvider({
+      modelPath: "test-model",
+      startupTimeoutMs: 5000,
+      requestTimeoutMs: 5000,
+    });
+    expect(provider.id).toBe("python");
+    expect(provider.model).toBe("test-model");
+    provider.dispose();
   });
 });

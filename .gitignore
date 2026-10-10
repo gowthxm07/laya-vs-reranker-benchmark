@@ -39,10 +39,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+venv/
+.venv/
+
 # local storage & vector data
 /data/*
 !/data/benchmark/
 /data/benchmark/results/*
 !/data/benchmark/results/.gitkeep
+/data/benchmark/security-results/*
+!/data/benchmark/security-results/.gitkeep
 /.data/
 *.vector-store.json
+sample_paper.pdf
+

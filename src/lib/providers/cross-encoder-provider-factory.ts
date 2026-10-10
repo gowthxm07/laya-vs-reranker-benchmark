@@ -4,12 +4,25 @@ import { MockCrossEncoderProvider } from "./mock-cross-encoder-provider";
 
 export type CrossEncoderProviderType = "python" | "mock";
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __crossEncoderProviderInstanceMap:
+    | Map<string, CrossEncoderProvider>
+    | undefined;
+}
+
 /**
  * [FACTORY PATTERN IMPLEMENTATION]
  * Instantiates and caches the active CrossEncoderProvider.
+ * Attached to globalThis to prevent orphan worker processes during Next.js dev reloads.
  */
 export class CrossEncoderProviderFactory {
-  private static instanceMap: Map<string, CrossEncoderProvider> = new Map();
+  private static get instanceMap(): Map<string, CrossEncoderProvider> {
+    if (!globalThis.__crossEncoderProviderInstanceMap) {
+      globalThis.__crossEncoderProviderInstanceMap = new Map();
+    }
+    return globalThis.__crossEncoderProviderInstanceMap;
+  }
 
   public static getProvider(
     type?: CrossEncoderProviderType,

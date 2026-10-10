@@ -23,6 +23,7 @@ export interface BenchmarkRunOptions {
   caseIds?: string[];
   limit?: number;
   orchestrator?: RAGComparisonOrchestrator;
+  layaThreshold?: number;
   onProgress?: (completed: number, total: number, caseId: string) => void;
 }
 
@@ -77,7 +78,8 @@ export class BenchmarkRunnerService {
           caseItem,
           mode,
           contextBudget,
-          runsPerQuery
+          runsPerQuery,
+          options?.layaThreshold
         );
         queryResults.push(queryRes);
         completedCount++;
@@ -129,6 +131,7 @@ export class BenchmarkRunnerService {
       datasetVersion: "1.0.0",
       mode,
       contextBudget: mode === "context-budget" ? contextBudget : undefined,
+      layaThreshold: options?.layaThreshold,
       runsPerQuery,
       llmModel: this.orchestrator.getLLMProvider().model,
       crossEncoderModel: "cross-encoder/ms-marco-MiniLM-L-6-v2",
@@ -167,7 +170,8 @@ export class BenchmarkRunnerService {
     caseItem: BenchmarkCase,
     mode: ComparisonMode,
     contextBudget: number,
-    runsPerQuery: number
+    runsPerQuery: number,
+    layaThreshold?: number
   ): Promise<QueryBenchmarkResult> {
     const initialCandidateCount = caseItem.candidateChunks.length;
     const initialCandidateChars = caseItem.candidateChunks.reduce(
@@ -198,6 +202,7 @@ export class BenchmarkRunnerService {
       mode,
       topN: 5,
       maxContextChunks: contextBudget,
+      layaThreshold,
     });
 
     if (runsPerQuery > 1) {
@@ -207,6 +212,7 @@ export class BenchmarkRunnerService {
           mode,
           topN: 5,
           maxContextChunks: contextBudget,
+          layaThreshold,
         });
       }
     }
@@ -286,6 +292,8 @@ export class BenchmarkRunnerService {
           laya: {
             selected: layaSelected,
             decision: layaSelected ? ("keep" as const) : ("drop" as const),
+            keepProbability: (compResult.laya.selectedChunks.find((sc) => sc.id === c.id) as { keepProbability?: number })?.keepProbability,
+            threshold: layaThreshold,
           },
         };
       });

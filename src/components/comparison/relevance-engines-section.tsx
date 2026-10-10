@@ -39,6 +39,20 @@ export function RelevanceEnginesSection({
     return new Set(comparisonResult.laya.selectedChunkIds);
   }, [comparisonResult]);
 
+  const layaEvaluatedMap = React.useMemo(() => {
+    const map = new Map<string, { keepProbability?: number; reason?: string }>();
+    if (!comparisonResult) return map;
+    const evaluated = (comparisonResult.laya.metadata?.evaluatedCandidates as Array<{
+      id: string;
+      keepProbability?: number;
+      relevanceRationale?: string;
+    }>) || [];
+    for (const c of evaluated) {
+      map.set(c.id, { keepProbability: c.keepProbability, reason: c.relevanceRationale });
+    }
+    return map;
+  }, [comparisonResult]);
+
   return (
     <section className="space-y-4">
       {/* Section Header */}
@@ -61,6 +75,21 @@ export function RelevanceEnginesSection({
       ) : (
         /* Populated Engines Comparison View */
         <div className="space-y-6">
+          {/* Visible Runtime Diagnostics Indicator */}
+          {comparisonResult.laya.filteringThreshold !== undefined && (
+            <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-xs font-mono text-sky-950 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                <span className="font-semibold">
+                  Laya strict filtering: &tau; = {comparisonResult.laya.filteringThreshold.toFixed(2)} | Candidates: {comparisonResult.sharedRetrieval.candidateCount} | Retained: {comparisonResult.laya.retainedCount} | Dropped: {comparisonResult.laya.discardedCount}
+                </span>
+              </div>
+              <span className="text-[11px] text-sky-700 font-sans">
+                {comparisonResult.laya.discardedCount} low-confidence candidate passage{comparisonResult.laya.discardedCount === 1 ? "" : "s"} filtered before LLM context
+              </span>
+            </div>
+          )}
+
           {/* Side-by-Side Strategy Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left: Cross-Encoder */}
@@ -147,6 +176,11 @@ export function RelevanceEnginesSection({
                       <div className="text-lg font-semibold text-text-primary">
                         {comparisonResult.laya.retainedCount} kept / {comparisonResult.sharedRetrieval.candidateCount}
                       </div>
+                      {comparisonResult.laya.filteringThreshold !== undefined && (
+                        <div className="text-[11px] font-mono text-sky-700 bg-sky-50/80 px-2 py-0.5 rounded border border-sky-200/60 w-fit">
+                          &tau; = {comparisonResult.laya.filteringThreshold.toFixed(2)} &bull; {comparisonResult.laya.discardedCount} dropped
+                        </div>
+                      )}
                       <div className="text-xs text-text-muted font-mono">
                         Evaluation latency: {formatLatency(comparisonResult.laya.relevanceLatencyMs)}
                       </div>
@@ -244,6 +278,11 @@ export function RelevanceEnginesSection({
                             ) : (
                               <span className={isLayaKept ? "text-emerald-700 font-medium" : "text-text-muted"}>
                                 {isLayaKept ? "KEEP" : "DROP"}
+                                {layaEvaluatedMap.has(chunk.id) && layaEvaluatedMap.get(chunk.id)?.keepProbability !== undefined && (
+                                  <span className="text-text-muted font-mono ml-1 text-[10px]">
+                                    (P={layaEvaluatedMap.get(chunk.id)!.keepProbability!.toFixed(2)})
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -278,6 +317,11 @@ export function RelevanceEnginesSection({
                             <span>{chunk.source || chunk.documentId || "Document excerpt"}</span>
                             {chunk.section && <span>§ {chunk.section}</span>}
                           </div>
+                          {layaEvaluatedMap.get(chunkId)?.reason && (
+                            <div className="mb-2 text-[11px] text-sky-800 bg-sky-50/80 px-2 py-1 rounded border border-sky-200/60 font-sans">
+                              <strong>Laya filter rationale:</strong> {layaEvaluatedMap.get(chunkId)!.reason}
+                            </div>
+                          )}
                           <p className="whitespace-pre-wrap">{chunk.text}</p>
                         </div>
                       )}

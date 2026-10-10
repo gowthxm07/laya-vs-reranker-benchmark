@@ -29,11 +29,17 @@ async function main() {
   const limitArg = args.find((a) => a.startsWith("--limit="))?.split("=")[1];
   const limit = limitArg ? parseInt(limitArg, 10) : undefined;
 
+  const threshArg = args
+    .find((a) => a.startsWith("--laya-threshold=") || a.startsWith("--threshold="))
+    ?.split("=")[1];
+  const layaThreshold = threshArg !== undefined ? parseFloat(threshArg) : undefined;
+
   console.log("=================================================================");
   console.log("  PatternRAG Lab - Phase 6 Objective Controlled Benchmark Suite  ");
   console.log("=================================================================");
   console.log(`Execution Mode:      ${mode}`);
   console.log(`Context Budget:      ${mode === "context-budget" ? contextBudget : "N/A (Native)"}`);
+  console.log(`Laya Threshold:      ${layaThreshold !== undefined ? layaThreshold : "0.50 (Native Baseline)"}`);
   console.log(`Runs per Query:      ${runsPerQuery}`);
   console.log(`Provider Backend:    ${isMock ? "Mock Providers (Deterministic)" : "Live (Cross-Encoder, Laya, Ollama)"}`);
   if (categoryArg) console.log(`Category Filter:     ${categoryArg}`);
@@ -63,6 +69,7 @@ async function main() {
     runsPerQuery,
     category: categoryArg,
     limit,
+    layaThreshold,
     onProgress: (done, total, caseId) => {
       process.stdout.write(`\rProgress: [${done}/${total}] Evaluating ${caseId}...          `);
     },
@@ -77,6 +84,7 @@ async function main() {
   console.log(`Downstream LLM:      ${result.metadata.llmModel}`);
   console.log(`Cross-Encoder:       ${result.metadata.crossEncoderModel}`);
   console.log(`Laya Evaluator:      ${result.metadata.layaModel}`);
+  console.log(`Laya Threshold:      ${result.metadata.layaThreshold ?? "0.50 (Native Baseline)"}`);
 
   console.log("\n-----------------------------------------------------------------");
   console.log(" 1. OVERALL RELEVANCE & EFFICIENCY METRICS (Cross-Encoder vs Laya)");
@@ -188,20 +196,50 @@ async function main() {
 
 class LayaFilteringServiceMock {
   private mockProvider = new MockLayaProvider();
-  async filterPool(pool: { candidateChunks: any[]; query: string }) {
+  async filterPool(
+    pool: { candidateChunks: any[]; query: string },
+    options?: { threshold?: number }
+  ) {
     // If query has 'no answer' or 'none', drop all chunks
     const qLower = pool.query.toLowerCase();
-    const isNoAns = qLower.includes("cat in space") || qLower.includes("atlantis") || qLower.includes("coca-cola") || qLower.includes("proxima");
-    
+    const isNoAns =
+      qLower.includes("cat in space") ||
+      qLower.includes("atlantis") ||
+      qLower.includes("coca-cola") ||
+      qLower.includes("proxima");
+
+    const threshold = options?.threshold ?? 0.5;
+
     const decisions = pool.candidateChunks.map((c: any) => {
-      const isRel = !isNoAns && (c.id.includes("rel") || c.id.includes("-c1") || (c.id.includes("-c2") && (qLower.includes("bert") || qLower.includes("two phases") || qLower.includes("photosynthesis") || qLower.includes("rag triad") || qLower.includes("masking") || qLower.includes("isolation") || qLower.includes("rome") || qLower.includes("saturated fat") || qLower.includes("transistor") || qLower.includes("hubble") || qLower.includes("kubernetes") || qLower.includes("compiler") || qLower.includes("oop") || qLower.includes("quaternary"))));
-      const decision = isRel ? "keep" : "drop";
+      const isRel =
+        !isNoAns &&
+        (c.id.includes("rel") ||
+          c.id.includes("-c1") ||
+          (c.id.includes("-c2") &&
+            (qLower.includes("bert") ||
+              qLower.includes("two phases") ||
+              qLower.includes("photosynthesis") ||
+              qLower.includes("rag triad") ||
+              qLower.includes("masking") ||
+              qLower.includes("isolation") ||
+              qLower.includes("rome") ||
+              qLower.includes("saturated fat") ||
+              qLower.includes("transistor") ||
+              qLower.includes("hubble") ||
+              qLower.includes("kubernetes") ||
+              qLower.includes("compiler") ||
+              qLower.includes("oop") ||
+              qLower.includes("quaternary"))));
+
+      const keepProb = isRel ? 0.95 : 0.05;
+      const isRetained = isRel && keepProb >= threshold;
+      const decision = isRetained ? "keep" : "drop";
       return {
         id: c.id,
         decision,
         confidence: "high",
         answerConfidence: "high",
-        probabilities: { keep: isRel ? 0.95 : 0.05, drop: isRel ? 0.05 : 0.95 },
+        probabilities: { keep: keepProb, drop: 1 - keepProb },
         chunk: c,
       };
     });

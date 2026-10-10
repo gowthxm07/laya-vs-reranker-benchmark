@@ -11,7 +11,8 @@ export type StageId =
   | "context-prep"
   | "cross-encoder-gen"
   | "laya-gen"
-  | "finalizing";
+  | "finalizing"
+  | string;
 
 export type StageStatus = "pending" | "running" | "completed" | "error";
 
@@ -26,13 +27,20 @@ export interface PipelineStageInfo {
 export interface ComparisonProgressPanelProps {
   stages: PipelineStageInfo[];
   elapsedSeconds: number;
+  title?: string;
+  badge?: string;
 }
 
 export function ComparisonProgressPanel({
   stages,
   elapsedSeconds,
+  title,
+  badge,
 }: ComparisonProgressPanelProps) {
   const formattedTime = formatElapsedSeconds(elapsedSeconds);
+  const isAllCompleted =
+    stages.length > 0 && stages.every((s) => s.status === "completed");
+  const hasError = stages.some((s) => s.status === "error");
 
   return (
     <div
@@ -43,17 +51,27 @@ export function ComparisonProgressPanel({
       {/* Header with live elapsed timer */}
       <div className="flex items-center justify-between pb-3 border-b border-border/60">
         <div className="flex items-center gap-2.5">
-          <Loader2 className="h-4 w-4 text-accent animate-spin shrink-0" />
+          {hasError ? (
+            <AlertCircle className="h-4 w-4 text-status-error shrink-0" />
+          ) : isAllCompleted ? (
+            <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+          ) : (
+            <Loader2 className="h-4 w-4 text-accent animate-spin shrink-0" />
+          )}
           <div className="text-xs font-semibold text-text-primary">
-            Comparison in progress
+            {hasError
+              ? "Comparison encountered an error"
+              : isAllCompleted
+              ? "Comparison completed"
+              : title || "Comparison in progress"}
             <span className="text-text-muted font-normal mx-1.5">·</span>
             <span className="font-mono font-medium text-text-secondary">
-              {formattedTime} elapsed
+              {formattedTime} {isAllCompleted ? "total" : "elapsed"}
             </span>
           </div>
         </div>
         <span className="text-[11px] font-mono text-text-muted">
-          Same-LLM Benchmark
+          {badge || "Same-LLM Benchmark"}
         </span>
       </div>
 

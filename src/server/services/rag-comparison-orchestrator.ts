@@ -195,7 +195,9 @@ export class RAGComparisonOrchestrator {
 
     try {
       const layaStart = performance.now();
-      filteredPool = await this.layaService.filterPool(pool, {});
+      filteredPool = await this.layaService.filterPool(pool, {
+        threshold: options?.layaThreshold,
+      });
       layaEvalLatencyMs =
         filteredPool.metrics.evaluationLatencyMs ||
         Math.round(performance.now() - layaStart);
@@ -463,9 +465,16 @@ export class RAGComparisonOrchestrator {
           },
         });
 
+        const isStrict =
+          typeof options?.layaThreshold === "number" &&
+          options.layaThreshold > 0.5;
+        const strategyName = isStrict
+          ? `Laya Relevance Filter (${filteredPool?.layaModel || "laya"}, strict \u03c4=${options.layaThreshold})`
+          : `Laya Relevance Filter (${filteredPool?.layaModel || "laya"})`;
+
         pathBResult = {
           pipelineId: "laya-rag",
-          strategyName: `Laya Relevance Filter (${filteredPool?.layaModel || "laya"})`,
+          strategyName,
           strategyId: "laya",
           selectedChunkIds: selectedChunksB.map((c) => c.id),
           selectedChunks: selectedChunksB,
@@ -484,11 +493,14 @@ export class RAGComparisonOrchestrator {
           promptTokens: genResultB.promptTokens,
           completionTokens: genResultB.completionTokens,
           totalTokens: genResultB.totalTokens,
+          filteringThreshold: options?.layaThreshold,
           metadata: {
             rawKeepCount: filteredPool?.retainedCandidates.length || 0,
             rawDropCount: filteredPool?.discardedCandidates.length || 0,
             contextReductionPercent:
               filteredPool?.metrics.contextReductionPercent || 0,
+            filteringThreshold: options?.layaThreshold,
+            evaluatedCandidates: filteredPool?.candidates || [],
           },
         };
       } catch (err: unknown) {

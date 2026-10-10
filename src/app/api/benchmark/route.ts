@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
     const caseIds: string[] | undefined = Array.isArray(body.caseIds)
       ? body.caseIds
       : undefined;
+    const layaThreshold: number | undefined =
+      body.layaThreshold !== undefined && body.layaThreshold !== null
+        ? Number(body.layaThreshold)
+        : undefined;
 
     const runner = new BenchmarkRunnerService();
     const result = await runner.runBenchmark({
@@ -58,6 +62,7 @@ export async function POST(req: NextRequest) {
       runsPerQuery,
       category,
       caseIds,
+      layaThreshold,
     });
 
     return NextResponse.json({

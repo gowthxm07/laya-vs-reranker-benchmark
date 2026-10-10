@@ -23,6 +23,9 @@ export interface ComparisonOptions {
   /** Maximum context chunks allowed when mode is "context-budget" (default: 5) */
   maxContextChunks?: number;
 
+  /** Experimental Laya keep-probability strictness threshold (default: undefined / 0.50) */
+  layaThreshold?: number;
+
   /** LLM generation options (temperature, seed, maxTokens, etc.) */
   generationOptions?: GenerationOptions;
 }
@@ -87,6 +90,9 @@ export interface PathComparisonResult {
 
   /** Total tokens consumed by LLM call */
   totalTokens: number;
+
+  /** Filtering threshold applied if this strategy is Laya (undefined for default) */
+  filteringThreshold?: number;
 
   /** Error message if this branch failed */
   error?: string;
